@@ -180,13 +180,13 @@
 		}
 	},
 	"icon": "images/icon.png",
-	"homepage": "",
+	"homepage": "https://github.com/mariosdrth/vscode-npm-explorer#readme",
 	"bugs": {
-		"url": ""
+		"url": "https://github.com/mariosdrth/vscode-npm-explorer/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": ""
+		"url": "https://github.com/mariosdrth/vscode-npm-explorer"
 	},
 	"galleryBanner": {
 		"color": "#1B1B1B",
