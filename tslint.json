@@ -1,0 +1,21 @@
+{
+    "rules": {
+      "no-console": [true,
+          "debug",
+          "info",
+          "time",
+          "timeEnd",
+          "trace",
+          "log"
+      ],
+      "quotemark": [true, "single"],
+      "semicolon": true,
+      "typedef": [true,
+          "call-signature",
+          "parameter",
+          "property-declaration",
+          "variable-declaration",
+          "member-variable-declaration"
+      ]
+    }
+  }

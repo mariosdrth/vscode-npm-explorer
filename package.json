@@ -1,0 +1,219 @@
+{
+	"name": "vscode-npm-explorer",
+	"displayName": "vscode-npm-explorer",
+	"description": "Explorer view that shows npm tasks and dependencies and allows running/updating/uninstalling/editing them",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.67.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"npm",
+		"tasks",
+		"runner",
+		"dependency",
+		"package"
+	],
+	"license": "MIT",
+	"author": "Marios Papamarkou",
+	"publisher": "mariospapa",
+	"activationEvents": [
+		"onView:npmExplorer"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "npmExplorer.runTask",
+				"title": "Run",
+				"icon": {
+					"light": "images/light/exec.svg",
+					"dark": "images/dark/exec.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.refresh",
+				"title": "Refresh",
+				"icon": {
+					"light": "images/light/refresh.svg",
+					"dark": "images/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.editTask",
+				"title": "Edit",
+				"icon": {
+					"light": "images/light/edit.svg",
+					"dark": "images/dark/edit.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.editDependency",
+				"title": "Edit",
+				"icon": {
+					"light": "images/light/edit.svg",
+					"dark": "images/dark/edit.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.deleteDependency",
+				"title": "Delete",
+				"icon": {
+					"light": "images/light/delete.svg",
+					"dark": "images/dark/delete.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.deleteTask",
+				"title": "Delete",
+				"icon": {
+					"light": "images/light/delete.svg",
+					"dark": "images/dark/delete.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.updateDependency",
+				"title": "Update",
+				"icon": {
+					"light": "images/light/update.svg",
+					"dark": "images/dark/update.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.uninstallDependency",
+				"title": "Uninstall",
+				"icon": {
+					"light": "images/light/uninstall.svg",
+					"dark": "images/dark/uninstall.svg"
+				}
+			},
+			{
+				"command": "npmExplorer.checkOutdated",
+				"title": "Check Dependencies",
+				"icon": {
+					"light": "images/light/outdated.svg",
+					"dark": "images/dark/outdated.svg"
+				}
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Npm Explorer",
+			"properties": {
+				"npmExplorer.relativePath": {
+					"type": "string",
+					"default": "",
+					"description": "Alternative relative path for package.json"
+				},
+				"npmExplorer.updateCommandArguments": {
+					"type": "string",
+					"default": "",
+					"description": "Extra arguments for the npm update command"
+				},
+				"npmExplorer.uninstallCommandArguments": {
+					"type": "string",
+					"default": "",
+					"description": "Extra arguments for the npm uninstall command"
+				}
+			}
+		},
+		"views": {
+			"explorer": [
+				{
+					"id": "npmExplorer",
+					"name": "Npm Explorer"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "npmExplorer.checkOutdated",
+					"when": "view == npmExplorer",
+					"group": "navigation@1"
+				},
+				{
+					"command": "npmExplorer.refresh",
+					"when": "view == npmExplorer",
+					"group": "navigation@2"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "npmExplorer.runTask",
+					"when": "view == npmExplorer && viewItem == npmTask",
+					"group": "inline@1"
+				},
+				{
+					"command": "npmExplorer.editTask",
+					"when": "view == npmExplorer && viewItem == npmTask",
+					"group": "inline@2"
+				},
+				{
+					"command": "npmExplorer.deleteTask",
+					"when": "view == npmExplorer && viewItem == npmTask",
+					"group": "inline@3"
+				},
+				{
+					"command": "npmExplorer.updateDependency",
+					"when": "view == npmExplorer && viewItem == dependency",
+					"group": "inline@1"
+				},
+				{
+					"command": "npmExplorer.uninstallDependency",
+					"when": "view == npmExplorer && viewItem == dependency",
+					"group": "inline@2"
+				},
+				{
+					"command": "npmExplorer.editDependency",
+					"when": "view == npmExplorer && viewItem == dependency",
+					"group": "inline@3"
+				},
+				{
+					"command": "npmExplorer.deleteDependency",
+					"when": "view == npmExplorer && viewItem == dependency",
+					"group": "inline@4"
+				}
+			]
+		}
+	},
+	"icon": "images/icon.png",
+	"homepage": "",
+	"bugs": {
+		"url": ""
+	},
+	"repository": {
+		"type": "git",
+		"url": ""
+	},
+	"galleryBanner": {
+		"color": "#1B1B1B",
+		"theme": "dark"
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.2.0",
+		"@types/lodash": "^4.14.182",
+		"@types/mocha": "^9.1.1",
+		"@types/node": "14.x",
+		"@types/vscode": "^1.67.0",
+		"@typescript-eslint/eslint-plugin": "^5.21.0",
+		"@typescript-eslint/parser": "^5.21.0",
+		"@vscode/test-electron": "^2.1.3",
+		"eslint": "^8.14.0",
+		"glob": "^8.0.1",
+		"lodash": "^4.17.21",
+		"mocha": "^9.2.2",
+		"tslint": "^6.1.3",
+		"typescript": "^4.6.4"
+	}
+}
