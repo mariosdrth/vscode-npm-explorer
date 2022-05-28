@@ -2,7 +2,7 @@ import {commands, ExtensionContext, window, workspace} from 'vscode';
 import {NpmTask, NpmExplorerProvider, Dependency} from './activityBarView';
 import {deleteDependency, deleteTask} from './deleteEntryCommand';
 import {editDependency, editTask} from './editEntryCommands';
-import {checkOutdated, uninstallDependency, updateDependency} from './npmTerminalCommands';
+import {checkOutdated, npmInstall, uninstallDependency, updateDependency} from './npmTerminalCommands';
 import {runTask} from './runTaskCommand';
 
 export function activate(context: ExtensionContext): void {
@@ -10,6 +10,7 @@ export function activate(context: ExtensionContext): void {
 	context.subscriptions.push(
 		window.registerTreeDataProvider('npmExplorer', npmExplorerProvider),
 		commands.registerCommand('npmExplorer.refresh', () => npmExplorerProvider.refresh()),
+		commands.registerCommand('npmExplorer.npmInstall', () => npmInstall()),
 		commands.registerCommand('npmExplorer.checkOutdated', () => checkOutdated()),
 		commands.registerCommand('npmExplorer.updateDependency', (dependency: Dependency) => updateDependency(dependency)),
 		commands.registerCommand('npmExplorer.uninstallDependency', (dependency: Dependency) => uninstallDependency(dependency)),

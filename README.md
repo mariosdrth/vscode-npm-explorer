@@ -8,6 +8,8 @@ This extension adds a new view in the explorer that shows npm tasks, dependencie
 
 ## Configuration
 
+These settings are probably better used as workspace settings instead of user settings, especially the alternative path as it depends on the workspace.
+
 - Relative path: in case the workspace is not open on the directory containing the package.json specify the relative path (if not the extension looks for package.json on the root directory of the workspace)
 - Uninstall Command Arguments: extra arguments to be passed to ``npm uninstall``
 - Update Command Arguments: extra arguments to be passed to ``npm update``
