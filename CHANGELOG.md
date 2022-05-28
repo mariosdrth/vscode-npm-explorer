@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.2.0]
+
+- Run all commands as VS Code tasks
+- Mark dependencies with an available update
+
 ## [1.1.0]
 
 - Add view action to easily run npm install

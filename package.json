@@ -2,7 +2,7 @@
 	"name": "vscode-npm-explorer",
 	"displayName": "Npm Explorer",
 	"description": "Explorer view that shows npm tasks and dependencies and allows running/updating/uninstalling/editing them",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"engines": {
 		"vscode": "^1.67.0"
 	},
@@ -104,6 +104,14 @@
 					"light": "images/light/install.svg",
 					"dark": "images/dark/install.svg"
 				}
+			},
+			{
+				"command": "npmExplorer.updateAll",
+				"title": "Update all packages",
+				"icon": {
+					"light": "images/light/update_all.svg",
+					"dark": "images/dark/update_all.svg"
+				}
 			}
 		],
 		"configuration": {
@@ -113,17 +121,38 @@
 				"npmExplorer.relativePath": {
 					"type": "string",
 					"default": "",
-					"description": "Alternative relative path for package.json"
+					"description": "Alternative relative path for package.json",
+					"order": 1
 				},
-				"npmExplorer.updateCommandArguments": {
+				"npmExplorer.updateDependencyCommandArguments": {
 					"type": "string",
 					"default": "",
-					"description": "Extra arguments for the npm update command"
+					"description": "Extra arguments for the npm update command (for dependency)",
+					"order": 2
 				},
-				"npmExplorer.uninstallCommandArguments": {
+				"npmExplorer.uninstallDependencyCommandArguments": {
 					"type": "string",
 					"default": "",
-					"description": "Extra arguments for the npm uninstall command"
+					"description": "Extra arguments for the npm uninstall command (for dependency)",
+					"order": 3
+				},
+				"npmExplorer.updateDevDependencyCommandArguments": {
+					"type": "string",
+					"default": "",
+					"description": "Extra arguments for the npm update command (for dev dependency)",
+					"order": 4
+				},
+				"npmExplorer.uninstallDevDependencyCommandArguments": {
+					"type": "string",
+					"default": "",
+					"description": "Extra arguments for the npm uninstall command (for dev dependency)",
+					"order": 5
+				},
+				"npmExplorer.installCommandArguments": {
+					"type": "string",
+					"default": "",
+					"description": "Extra arguments for the npm install command",
+					"order": 6
 				}
 			}
 		},
@@ -138,19 +167,24 @@
 		"menus": {
 			"view/title": [
 				{
-					"command": "npmExplorer.npmInstall",
+					"command": "npmExplorer.updateAll",
 					"when": "view == npmExplorer",
 					"group": "navigation@1"
 				},
 				{
-					"command": "npmExplorer.checkOutdated",
+					"command": "npmExplorer.npmInstall",
 					"when": "view == npmExplorer",
 					"group": "navigation@2"
 				},
 				{
-					"command": "npmExplorer.refresh",
+					"command": "npmExplorer.checkOutdated",
 					"when": "view == npmExplorer",
 					"group": "navigation@3"
+				},
+				{
+					"command": "npmExplorer.refresh",
+					"when": "view == npmExplorer",
+					"group": "navigation@4"
 				}
 			],
 			"view/item/context": [

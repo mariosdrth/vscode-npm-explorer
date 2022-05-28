@@ -1,7 +1,13 @@
 import {Event, EventEmitter, RelativePattern, TextDocument, TreeDataProvider, TreeItem, TreeItemCollapsibleState, Uri, workspace, WorkspaceFolder} from 'vscode';
 import * as path from 'path';
+import * as cp from 'child_process';
 
 type NpmExplorerTreeItem = BaseItem | NpmTask | Dependency;
+
+interface OutdatedDependency {
+    name: string;
+    wanted: string;
+}
 
 export class NpmExplorerProvider implements TreeDataProvider<NpmExplorerTreeItem> {
     private _onDidChangeTreeData: EventEmitter<NpmExplorerTreeItem | undefined | void> = new EventEmitter<NpmExplorerTreeItem | undefined | void>();
@@ -38,19 +44,24 @@ class BaseItem extends TreeItem {
 export class Dependency extends TreeItem {
     name: string;
     version: string;
+    isOutdated: boolean;
+    wantedVersion: string;
     isDev: boolean;
 
-    constructor(name: string, version: string, isDev?: boolean) {
-        super(`${name}: "${version}"`, TreeItemCollapsibleState.None);
+    constructor(name: string, version: string, isOutdated: boolean, wantedVersion: string, isDev?: boolean) {
+        super(name, TreeItemCollapsibleState.None);
+        this.description = `Current version: ${version}${isOutdated ? ` - Newer version ${wantedVersion}` : ''}`;
         this.name = name;
         this.version = version;
+        this.isOutdated = !!isOutdated;
+        this.wantedVersion = wantedVersion;
         this.isDev = !!isDev;
-    }
 
-    iconPath: {light: string; dark: string} = {
-		light: path.join(__filename, '..', '..', 'images', 'light', 'dependency.svg'),
-		dark: path.join(__filename, '..', '..', 'images', 'dark', 'dependency.svg')
-	};
+        this.iconPath = {
+            light: isOutdated ? path.join(__filename, '..', '..', 'images', 'light', 'dependency_outdated.svg') : path.join(__filename, '..', '..', 'images', 'light', 'dependency.svg'),
+            dark: isOutdated ? path.join(__filename, '..', '..', 'images', 'dark', 'dependency_outdated.svg') : path.join(__filename, '..', '..', 'images', 'dark', 'dependency.svg')
+        };
+    }
 
     contextValue: string = 'dependency';
 }
@@ -103,8 +114,9 @@ export const getPackageJsonDocument: () => Promise<TextDocument | null> = async 
 
 const getTree: () => Promise<BaseItem[]> = async () => {
     const npmTasks: NpmTask[] = await getNpmTasks();
-    const npmDependencies: Dependency[] = await getNpmDependencies();
-    const npmDevDependencies: Dependency[] = await getNpmDevDependencies();
+    const outdatedDependencies: OutdatedDependency[] = await getOutdatedDependencies();
+    const npmDependencies: Dependency[] = await getNpmDependencies(outdatedDependencies);
+    const npmDevDependencies: Dependency[] = await getNpmDevDependencies(outdatedDependencies);
     const items: BaseItem[] = [];
 
     npmTasks && npmTasks.length > 0 && items.push(new BaseItem('Tasks', npmTasks));
@@ -126,7 +138,7 @@ const getNpmTasks: () => Promise<NpmTask[]> = async () => {
     return Object.entries(scripts).map(entry => new NpmTask(entry[0], entry[1] as string));
 };
 
-const getNpmDependencies: () => Promise<Dependency[]> = async () => {
+const getNpmDependencies: (outdatedDependencies: OutdatedDependency[]) => Promise<Dependency[]> = async (outdatedDependencies) => {
     const content: string = await getPackageJsonContent();
     if (!content) {
         return [];
@@ -135,10 +147,18 @@ const getNpmDependencies: () => Promise<Dependency[]> = async () => {
     if (!dependencies) {
         return [];
     }
-    return Object.entries(dependencies).map(entry => new Dependency(entry[0], entry[1] as string));
+    return Object.entries(dependencies).map((entry: any) => {
+        const outdatedDependency: OutdatedDependency = outdatedDependencies.filter(dep => dep.name === entry[0])[0];
+        const isOutdated: boolean = outdatedDependency && !entry[1].includes(outdatedDependency.wanted);
+        let wantedVersion: string = '';
+        if (isOutdated) {
+            wantedVersion = outdatedDependency.wanted;
+        }
+        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion);
+    });
 };
 
-const getNpmDevDependencies: () => Promise<Dependency[]> = async () => {
+const getNpmDevDependencies: (outdatedDependencies: OutdatedDependency[]) => Promise<Dependency[]> = async (outdatedDependencies) => {
     const content: string = await getPackageJsonContent();
     if (!content) {
         return [];
@@ -147,7 +167,15 @@ const getNpmDevDependencies: () => Promise<Dependency[]> = async () => {
     if (!devDependencies) {
         return [];
     }
-    return Object.entries(devDependencies).map(entry => new Dependency(entry[0], entry[1] as string, true));
+    return Object.entries(devDependencies).map((entry: any) => {
+        const outdatedDependency: OutdatedDependency = outdatedDependencies.filter(dep => dep.name === entry[0])[0];
+        const isOutdated: boolean = outdatedDependency && !entry[1].includes(outdatedDependency.wanted);
+        let wantedVersion: string = '';
+        if (isOutdated) {
+            wantedVersion = outdatedDependency.wanted;
+        }
+        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion, true);
+    });
 };
 
 const getPackageJsonContent: () => Promise<string> = async () => {
@@ -161,4 +189,35 @@ const getPackageJsonContent: () => Promise<string> = async () => {
         return '';
     }
     return document.getText();
+};
+
+const getOutdatedDependencies: () => Promise<OutdatedDependency[]> = async () => {
+    const relativePath: string = workspace.getConfiguration('npmExplorer').get<string>('relativePath', '');
+    let workspaceRootPath: string | undefined = workspace.workspaceFolders && workspace.workspaceFolders[0].uri.fsPath;
+    let commandPrefix: string = '--prefix';
+
+    if (workspaceRootPath) {
+        if (relativePath) {
+            commandPrefix = ` ${commandPrefix} ${workspaceRootPath}/${relativePath}`;
+        } else {
+            commandPrefix = ` ${commandPrefix} ${workspaceRootPath}`;
+        }
+
+        return Object.entries(JSON.parse(await execShell(`powershell npm ${commandPrefix} outdated --json`)))
+        .filter((entry: any) => entry[1].current !== entry[1].wanted)
+        .map((entry: any) => ({name: entry[0], wanted: entry[1].wanted}));
+    }
+
+    return [];
+};
+
+const execShell: (cmd: string) => Promise<string> = (cmd: string) => {
+    return new Promise<string>((resolve) => {
+        cp.exec(cmd, (err, out) => {
+            if (out) {
+                return resolve(out);
+            }
+            return resolve('');
+        });
+    });
 };
