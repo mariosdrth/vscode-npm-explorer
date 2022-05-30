@@ -1,4 +1,4 @@
-import {ColorThemeKind, Disposable, ExtensionContext, Uri, ViewColumn, Webview, WebviewPanel, window} from 'vscode';
+import {ColorTheme, ColorThemeKind, Disposable, ExtensionContext, Uri, ViewColumn, Webview, WebviewPanel, window} from 'vscode';
 import axios from 'axios';
 import {marked} from 'marked';
 import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
@@ -6,20 +6,16 @@ import {installDependency} from './taskCommands';
 
 const SEARCH_SIZE: number = 100;
 
-interface NpmDependency extends Partial<Dependency> {
-    isInstalled: boolean;
-}
-
 export class NpmRegistryWebView {
 
     private panel: WebviewPanel;
     private disposables: Disposable[] = [];
     private npmExplorerProvider: NpmExplorerProvider;
     private context: ExtensionContext;
-    private npmDependency: NpmDependency | undefined;
-    // isOpen: boolean;
+    private dependency: Dependency | undefined;
+    private searchText: string | undefined;
 
-    constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency) {
+    constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
         this.panel = window.createWebviewPanel(
             'npmRegistry',
             'Npm Registry',
@@ -27,31 +23,12 @@ export class NpmRegistryWebView {
             {enableScripts: true}
         );
 
-        this.npmDependency = dependency ? {...dependency, isInstalled: true} : undefined;
+        this.dependency = dependency;
         this.npmExplorerProvider = npmExplorerProvider;
         this.context = context;
+        this.searchText = searchText;
 
-        // this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
-        // this.isOpen = true;
-
-        // const npmDependency: NpmDependency | undefined = dependency ? {...dependency, isInstalled: true} : undefined;
-        // const npmDependency: NpmDependency = {
-        //     name: 'mocha',
-        //     version: '^9.2.2',
-        //     isDev: true,
-        //     isInstalled: true
-        // };
-
-        // this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, context);
-
-        // setTimeout(() => {
-        //     this.getContent(this.panel.webview, context, npmDependency)
-        //     .then((value) => this.panel.webview.html = value)
-        //     .catch(reason => this.panel.webview.html = reason);
-        // }, 5000);
-        // this.getContent(this.panel.webview, context, npmDependency)
-        //     .then((value) => this.panel.webview.html = value)
-        //     .catch(reason => this.panel.webview.html = reason);
+        this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 
         this.panel.webview.onDidReceiveMessage(
             message => {
@@ -59,95 +36,127 @@ export class NpmRegistryWebView {
                     case 'installVersion':
                         this.installVersion(message.version);
                         return;
-                    case 'updatePackage':
-                        this.installVersion(message.version);
+                    case 'installVersionForNewPackage':
+                        this.installVersionForNewPackage(message.version, message.isDev);
+                        return;
+                    case 'searchResultSelected':
+                        this.selectPackage(message.packageName);
+                        return;
+                    case 'search':
+                        this.searchForPackages(message.searchtext);
                         return;
                 }
             },
             undefined,
-            context.subscriptions
+            this.disposables
         );
 
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         this.refreshContent();
 
-        //TODO update color of select correctly
-        // window.onDidChangeActiveColorTheme(() => {
-        //     if (this.isOpen) {
-        //         this.updateContent(this.panel.webview, context, npmDependency);
-        //     }
-        // });
+        window.onDidChangeActiveColorTheme((colorTheme: ColorTheme) => {
+            this.updateSelectClass(colorTheme);
+        });
     }
 
-    // private updateNpmDependency(newVersion: string): void {
-    //     if (this.npmDependency) {
-    //         this.npmDependency = {...this.npmDependency, version: newVersion};
-    //     }
-    // }
+    // Actions triggered from the view
+    private searchForPackages(searchtext: string): void {
+        if (!searchtext) {
+            return;
+        }
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        this.dependency = undefined;
+        this.searchText = searchtext;
+        this.refreshContent();
+    }
 
-    private installVersion(version: string): void {
-        if (!this.npmDependency || !this.npmDependency.name) {
+    private async selectPackage(packageName: string): Promise<void> {
+        this.updateLoadingState(true);
+        let installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency, packageName);
+
+        if (!installedDependency) {
+            installedDependency = {name: packageName, isInstalled: false};
+        }
+        new NpmRegistryWebView(this.npmExplorerProvider, this.context, installedDependency, undefined);
+        this.updateLoadingState(false);
+    }
+
+    private async installVersion(version: string): Promise<void> {
+        if (!this.dependency || !this.dependency.name) {
             window.showInformationMessage('Something went wrong, no dependency to update');
             return;
         }
+        if (!this.dependency.isInstalled) {
+            return;
+        }
+        this.updateLoadingState(true);
         const versionToUpdateTo: string = version.replace(' (latest)', '');
-        installDependency(this.npmDependency.name, this.npmExplorerProvider, versionToUpdateTo, this.npmDependency.isDev);
-        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, this.dependency.isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
-            let baseItems: BaseItem[] = await this.npmExplorerProvider.getChildren() as BaseItem[];
-            if (this.npmDependency?.isDev) {
-                const devDependencies: Dependency[] = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dev Dependencies')[0].children as Dependency[];
-                const dependency: Dependency = devDependencies.filter(dep => dep.label === this.npmDependency?.name)[0];
-                this.npmDependency = {...dependency, isInstalled: true};
-            } else {
-                const devDependencies: Dependency[] = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dependencies')[0].children as Dependency[];
-                const dependency: Dependency = devDependencies.filter(dep => dep.label === this.npmDependency?.name)[0];
-                this.npmDependency = {...dependency, isInstalled: true};
-            }
-            setTimeout(() => this.refreshContent(false), 1500);
+            const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
+            this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev});
+            this.updateLoadingState(false);
         });
-        //TODO update view
-        // this.npmExplorerProvider.onDidChangeTreeData(() => {
-        //     this.updateNpmDependency(version);
-        //     this.refreshContent();
-        // });
     }
 
-    private async refreshContent(showSpinner: boolean = true): Promise<void> {
-        if (showSpinner) {
-            this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+    private async installVersionForNewPackage(version: string, isDev: boolean): Promise<void> {
+        if (!this.dependency || !this.dependency.name) {
+            window.showInformationMessage('Something went wrong, no dependency to update');
+            return;
         }
-        this.getContent(this.panel.webview, this.context, this.npmDependency)
-            .then((value) => this.panel.webview.html = value)
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        const versionToUpdateTo: string = version.replace(' (latest)', '');
+        installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, isDev);
+        this.npmExplorerProvider.onDidChangeTreeData(async () => {
+            const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
+            this.searchText = undefined;
+            this.refreshContent();
+        });
+    }
+
+    // Actions updating the view
+    private updateSelectClass(colorTheme?: ColorTheme): void {
+        let isDark: boolean = true;
+        let activeColorTheme: ColorTheme = colorTheme ? colorTheme : window.activeColorTheme;
+        if (activeColorTheme.kind === ColorThemeKind.Light || activeColorTheme.kind === ColorThemeKind.HighContrastLight) {
+            isDark = false;
+        }
+        this.panel.webview.postMessage({command: 'updateVersionSelectOptionClass', isDark: isDark});
+    }
+
+    private updateLoadingState(show: boolean): void {
+        if (show) {
+            this.panel.webview.postMessage({command: 'showLoading'});
+        } else {
+            this.panel.webview.postMessage({command: 'hideLoading'});
+        }
+    }
+
+    private async refreshContent(): Promise<void> {
+        this.getContent(this.panel.webview, this.context, this.dependency, this.searchText)
+            .then((value) => {
+                this.panel.webview.html = value;
+                this.updateSelectClass();
+            })
             .catch(reason => this.panel.webview.html = reason);
     }
 
-    // showPanel(): void {
-    //     if (this.panel) {
-    //         this.panel.reveal(ViewColumn.Active);
-    //     }
-    // }
-
-    // private updateInnerClass(webview: Webview, context: ExtensionContext, colorTheme: ColorTheme) {
-    //     const currentHtml: string = webview.html;
-    //     webview.html = this.getLoadingSpinner(this.panel.webview, context);
-    //     let selectOptionStyle: string = 'background-color: rgba(0, 0, 0, 0.8);';
-    //     if (colorTheme.kind === ColorThemeKind.Light || colorTheme.kind === ColorThemeKind.HighContrastLight) {
-    //         selectOptionStyle = 'background-color: rgba(100, 100, 100, 0.3);';
-    //     }
-    //     webview.html = currentHtml.replace()
-    // }
-
-
-    private async getContent(webview: Webview, context: ExtensionContext, npmDependency?: NpmDependency, searchText?: string): Promise<string> {
+    // Html content methods
+    private async getContent(webview: Webview, context: ExtensionContext, dependency?: Dependency, searchText?: string): Promise<string> {
         const nonce: string = this.getNonce();
         let res: any;
+        let initialSearchText: string = '';
         if (searchText) {
+            initialSearchText = searchText;
             res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}`);
-        } else if (npmDependency) {
-            res = await axios.get(`https://registry.npmjs.org/${npmDependency.name}`);
+        } else if (dependency) {
+            res = await axios.get(`https://registry.npmjs.org/${dependency.name}`);
         }
 
         const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'styles.css'));
+        const loadingStyles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'spinner.css'));
         const script: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'scripts', 'main.js'));
         const codiconsUri: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'node_modules', 'vscode-codicons', 'dist', 'codicon.css'));
 
@@ -155,18 +164,24 @@ export class NpmRegistryWebView {
             <html lang="en">
                 <head>
                     <meta charset="utf-8">
-                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} \'unsafe-inline\'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
                     <link href="${styles}" rel="stylesheet"/>
                     <link href="${codiconsUri}" rel="stylesheet"/>
+                    <link href="${loadingStyles}" rel="stylesheet"/>
                     <title>Npm Registry</title>
                 </head>
                 <body>
+                    <div id="loader-wrapper" class="invisible">
+                        <div class="spinner-wrapper">
+                            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                        </div>
+                    </div>
                     <div id="search-wrapper">
-                        <input id="search" type="text" id="package" placeholder="Search Package...">
+                        <input value="${initialSearchText}" id="search" type="text" id="package" placeholder="Search Package...">
                         <i id="search-btn-icon" class="codicon codicon-search"></i>
                     </div>
                     ${searchText ? this.getSearchContent(res) : ''}
-                    ${npmDependency ? this.getPackageContent(npmDependency, res) : ''}
+                    ${dependency ? this.getPackageContent(dependency, res) : ''}
                     <script nonce="${nonce}" src="${script}"></script>
                 </body>
             </html>
@@ -193,7 +208,7 @@ export class NpmRegistryWebView {
                                 <p class="result-list-item-version">${entry[1].package.version}</p>
                             </div>
                             <p>${entry[1].package.description}</p>
-                            ${entry[1].package.author ? `<p>${entry[1].package.author.name}</p>` : ''}
+                            ${entry[1].package.author ? `<p>${entry[1].package.author.name}</p>` : '<p id="no-author">No author provided</p>'}
                         </button>
                     </li>
                 `;
@@ -208,23 +223,19 @@ export class NpmRegistryWebView {
         `;
     }
 
-    private getPackageContent(npmDependency: NpmDependency, res: any): string {
+    private getPackageContent(dependency: Dependency, res: any): string {
         if (!res && !res.data) {
             return '';
         }
 
         const latestVersionTag: string = res.data['dist-tags'].latest;
         const url: string = res.data.repository?.url.replace('git+', '');
-        const npmUrl: string = `https://www.npmjs.com/package/${npmDependency.name}`;
-        let selectOptionStyle: string = 'background-color: rgba(0, 0, 0, 0.8);';
-        if (window.activeColorTheme.kind === ColorThemeKind.Light || window.activeColorTheme.kind === ColorThemeKind.HighContrastLight) {
-            selectOptionStyle = 'background-color: rgba(100, 100, 100, 0.3);';
-        }
+        const npmUrl: string = `https://www.npmjs.com/package/${dependency.name}`;
         const versions: any[] = Object.entries(res.data.versions).reverse().map((entry: any) => ({versionTag: entry[0], details: entry[1]}));
         const selectOptions: string = versions
                 .map((version: any) => {
                     return `${version.versionTag === latestVersionTag
-                            ? `<option style="${selectOptionStyle}" selected>` : `<option style="${selectOptionStyle}">`}
+                            ? `<option class="version-select-option" selected>` : `<option class="version-select-option">`}
                                 ${version.versionTag === latestVersionTag ? `${version.versionTag} (latest)` : version.versionTag}</option>`;
                 })
                 .join('');
@@ -239,9 +250,9 @@ export class NpmRegistryWebView {
 
         let installedVersion: string | undefined;
         let isDev: boolean | undefined;
-        if (npmDependency.isInstalled) {
-            installedVersion = npmDependency.version;
-            isDev = npmDependency.isDev;
+        if (dependency.isInstalled) {
+            installedVersion = dependency.version;
+            isDev = dependency.isDev;
         }
 
         let author: string = '';
@@ -261,22 +272,31 @@ export class NpmRegistryWebView {
                     <div id="content-info-header">
                         <i id="content-info-icon" class="codicon codicon-package"></i>
                         <div id="content-info-package-det">
-                            <h2 id="content-info-name">${npmDependency.name}</h2>
+                            <h2 id="content-info-name">${dependency.name}</h2>
                             ${author ? `<h3 id="content-info-author">${author}</h3>` : ''}
                         </div>
                     </div>
                     ${res.data.description ? `<h4 id="content-info-desc">${res.data.description}</h4>` : ''}
-                    ${npmDependency.isInstalled
+                    ${dependency.isInstalled
                         ? `<div id="content-info-version">
                                 <i id="content-info-version-icon" class="details-section-icon codicon codicon-verified"></i>
-                                <i>Version (${installedVersion}) installed${isDev ? ' as dev dependency' : ''}</i>
+                                <i id="content-info-installed-version">Version (${installedVersion}) installed${isDev ? ' as dev dependency' : ''}</i>
                             </div>`
                         : ''}
                     <div id="version-wrapper">
                         <select id="version">
                             ${selectOptions}
                         </select>
-                        ${`<button id="install-btn">Install</button>`}
+                        <button id="install-btn" class="${dependency.isInstalled ? 'install-btn-hover' : 'install-btn-no-hover'}">Install</button>
+                        ${!dependency.isInstalled ? `<div id="install-btn-dropdown">
+                            <button id="install-btn-arrow">
+                                <i id="install-btn-arrow-icon" class="codicon codicon-fold-down"></i>
+                            </button>
+                            <div id="install-btn-dropdown-content">
+                                <a id="install-btn-dep" class="install-btn-dropdown-content-link" href="">As Dependency</a>
+                                <a id="install-btn-dev-dep" class="install-btn-dropdown-content-link" href="">As Dev Dependency</a>
+                            </div>
+                        </div>` : ''}
                     </div>
                     <div id="details">
                         <div class="details-section">
@@ -334,6 +354,47 @@ export class NpmRegistryWebView {
         `;
     }
 
+    // Util methods
+    private async getInstalledDependency(dependency?: Dependency, dependencyName?: string): Promise<Dependency | undefined> {
+        let baseItems: BaseItem[] = await this.npmExplorerProvider.getChildren() as BaseItem[];
+        const allDependencies: Dependency[] = [];
+        const devDependencies: BaseItem = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dev Dependencies')[0];
+        const dependencies: BaseItem = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dependencies')[0];
+        let installedDependencyName: string | undefined = '';
+
+        if (!dependency) {
+            if (devDependencies) {
+                allDependencies.push(...devDependencies.children as Dependency[]);
+            }
+
+            if (dependencies) {
+                allDependencies.push(...dependencies.children as Dependency[]);
+            }
+        } else if (dependency.isDev) {
+            if (devDependencies) {
+                allDependencies.push(...devDependencies.children as Dependency[]);
+            }
+        } else {
+            if (dependencies) {
+                allDependencies.push(...dependencies.children as Dependency[]);
+            }
+        }
+
+        if (dependency) {
+            installedDependencyName = dependency.name;
+        } else if (dependencyName) {
+            installedDependencyName = dependencyName;
+        }
+
+        const newDependency: Dependency = allDependencies.filter(dep => dep.label === installedDependencyName)[0];
+
+        if (!newDependency) {
+            return undefined;
+        }
+
+        return newDependency;
+    }
+
     private getNonce(): string {
         let text: string = '';
         const possible: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -343,15 +404,14 @@ export class NpmRegistryWebView {
         return text;
     }
 
-    // private dispose(): void {
-	// 	this.panel.dispose();
-    //     this.isOpen = false;
+    private dispose(): void {
+		this.panel.dispose();
 
-	// 	while (this.disposables.length) {
-	// 		const disposable: Disposable | undefined = this.disposables.pop();
-	// 		if (disposable) {
-	// 			disposable.dispose();
-	// 		}
-	// 	}
-	// }
+		while (this.disposables.length) {
+			const disposable: Disposable | undefined = this.disposables.pop();
+			if (disposable) {
+				disposable.dispose();
+			}
+		}
+	}
 }

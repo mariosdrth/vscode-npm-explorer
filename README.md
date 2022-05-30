@@ -6,6 +6,13 @@ This extension adds a new view in the explorer that shows npm tasks, dependencie
 
 <br/>![Npm Explorer](images/npm-explorer.gif)
 
+The extension offers also a webview to search the npm registry for packages, install directly from there or install different versions from the existing packages, either as production or development dependencies.
+<br/>The webview can be triggered:
+- From an existing dependency directly (opens the page of this dependency)
+- From the general actions (opens a page to search for packages)
+
+<br/>![Npm Registry](images/npm-registry-view.png)
+
 ## Configuration
 
 These settings are probably better used as workspace settings instead of user settings, especially the alternative path as it depends on the workspace.
