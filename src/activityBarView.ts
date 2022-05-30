@@ -198,12 +198,12 @@ const getOutdatedDependencies: () => Promise<OutdatedDependency[]> = async () =>
 
     if (workspaceRootPath) {
         if (relativePath) {
-            commandPrefix = ` ${commandPrefix} ${workspaceRootPath}/${relativePath}`;
+            commandPrefix = ` ${commandPrefix} "${workspaceRootPath}/${relativePath}"`;
         } else {
-            commandPrefix = ` ${commandPrefix} ${workspaceRootPath}`;
+            commandPrefix = ` ${commandPrefix} "${workspaceRootPath}"`;
         }
 
-        return Object.entries(JSON.parse(await execShell(`powershell npm ${commandPrefix} outdated --json`)))
+        return Object.entries(JSON.parse(await execShell(`npm ${commandPrefix} outdated --json`)))
         .filter((entry: any) => entry[1].current !== entry[1].wanted)
         .map((entry: any) => ({name: entry[0], wanted: entry[1].wanted}));
     }
