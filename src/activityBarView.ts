@@ -2,7 +2,7 @@ import {Event, EventEmitter, RelativePattern, TextDocument, TreeDataProvider, Tr
 import * as path from 'path';
 import * as cp from 'child_process';
 
-type NpmExplorerTreeItem = BaseItem | NpmTask | Dependency;
+export type NpmExplorerTreeItem = BaseItem | NpmTask | Dependency;
 
 interface OutdatedDependency {
     name: string;
@@ -32,7 +32,7 @@ export class NpmExplorerProvider implements TreeDataProvider<NpmExplorerTreeItem
     }
 }
 
-class BaseItem extends TreeItem {
+export class BaseItem extends TreeItem {
     children: NpmTask[] | Dependency[];
 
     constructor(label: string, children: NpmTask[] | Dependency[]) {

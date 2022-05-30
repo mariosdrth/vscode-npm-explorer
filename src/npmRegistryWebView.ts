@@ -1,7 +1,8 @@
 import {ColorThemeKind, Disposable, ExtensionContext, Uri, ViewColumn, Webview, WebviewPanel, window} from 'vscode';
 import axios from 'axios';
 import {marked} from 'marked';
-import {Dependency} from './activityBarView';
+import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
+import {installDependency} from './taskCommands';
 
 const SEARCH_SIZE: number = 100;
 
@@ -13,9 +14,12 @@ export class NpmRegistryWebView {
 
     private panel: WebviewPanel;
     private disposables: Disposable[] = [];
-    isOpen: boolean;
+    private npmExplorerProvider: NpmExplorerProvider;
+    private context: ExtensionContext;
+    private npmDependency: NpmDependency | undefined;
+    // isOpen: boolean;
 
-    constructor(context: ExtensionContext, dependency?: Dependency) {
+    constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency) {
         this.panel = window.createWebviewPanel(
             'npmRegistry',
             'Npm Registry',
@@ -23,16 +27,20 @@ export class NpmRegistryWebView {
             {enableScripts: true}
         );
 
-        this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
-        this.isOpen = true;
+        this.npmDependency = dependency ? {...dependency, isInstalled: true} : undefined;
+        this.npmExplorerProvider = npmExplorerProvider;
+        this.context = context;
+
+        // this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
+        // this.isOpen = true;
 
         // const npmDependency: NpmDependency | undefined = dependency ? {...dependency, isInstalled: true} : undefined;
-        const npmDependency: NpmDependency = {
-            name: 'mocha',
-            version: '^9.2.2',
-            isDev: true,
-            isInstalled: true
-        };
+        // const npmDependency: NpmDependency = {
+        //     name: 'mocha',
+        //     version: '^9.2.2',
+        //     isDev: true,
+        //     isInstalled: true
+        // };
 
         // this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, context);
 
@@ -45,7 +53,22 @@ export class NpmRegistryWebView {
         //     .then((value) => this.panel.webview.html = value)
         //     .catch(reason => this.panel.webview.html = reason);
 
-        this.updateContent(this.panel.webview, context, npmDependency);
+        this.panel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'installVersion':
+                        this.installVersion(message.version);
+                        return;
+                    case 'updatePackage':
+                        this.installVersion(message.version);
+                        return;
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
+
+        this.refreshContent();
 
         //TODO update color of select correctly
         // window.onDidChangeActiveColorTheme(() => {
@@ -55,18 +78,54 @@ export class NpmRegistryWebView {
         // });
     }
 
-    private async updateContent(webview: Webview, context: ExtensionContext, npmDependency?: NpmDependency, searchText?: string): Promise<void> {
-        webview.html = this.getLoadingSpinner(this.panel.webview, context);
-        this.getContent(webview, context, npmDependency)
-            .then((value) => webview.html = value)
-            .catch(reason => webview.html = reason);
+    // private updateNpmDependency(newVersion: string): void {
+    //     if (this.npmDependency) {
+    //         this.npmDependency = {...this.npmDependency, version: newVersion};
+    //     }
+    // }
+
+    private installVersion(version: string): void {
+        if (!this.npmDependency || !this.npmDependency.name) {
+            window.showInformationMessage('Something went wrong, no dependency to update');
+            return;
+        }
+        const versionToUpdateTo: string = version.replace(' (latest)', '');
+        installDependency(this.npmDependency.name, this.npmExplorerProvider, versionToUpdateTo, this.npmDependency.isDev);
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        this.npmExplorerProvider.onDidChangeTreeData(async () => {
+            let baseItems: BaseItem[] = await this.npmExplorerProvider.getChildren() as BaseItem[];
+            if (this.npmDependency?.isDev) {
+                const devDependencies: Dependency[] = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dev Dependencies')[0].children as Dependency[];
+                const dependency: Dependency = devDependencies.filter(dep => dep.label === this.npmDependency?.name)[0];
+                this.npmDependency = {...dependency, isInstalled: true};
+            } else {
+                const devDependencies: Dependency[] = baseItems.filter(baseItem => baseItem instanceof BaseItem && baseItem.label === 'Dependencies')[0].children as Dependency[];
+                const dependency: Dependency = devDependencies.filter(dep => dep.label === this.npmDependency?.name)[0];
+                this.npmDependency = {...dependency, isInstalled: true};
+            }
+            setTimeout(() => this.refreshContent(false), 1500);
+        });
+        //TODO update view
+        // this.npmExplorerProvider.onDidChangeTreeData(() => {
+        //     this.updateNpmDependency(version);
+        //     this.refreshContent();
+        // });
     }
 
-    showPanel(): void {
-        if (this.panel) {
-            this.panel.reveal(ViewColumn.Active);
+    private async refreshContent(showSpinner: boolean = true): Promise<void> {
+        if (showSpinner) {
+            this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         }
+        this.getContent(this.panel.webview, this.context, this.npmDependency)
+            .then((value) => this.panel.webview.html = value)
+            .catch(reason => this.panel.webview.html = reason);
     }
+
+    // showPanel(): void {
+    //     if (this.panel) {
+    //         this.panel.reveal(ViewColumn.Active);
+    //     }
+    // }
 
     // private updateInnerClass(webview: Webview, context: ExtensionContext, colorTheme: ColorTheme) {
     //     const currentHtml: string = webview.html;
@@ -217,7 +276,7 @@ export class NpmRegistryWebView {
                         <select id="version">
                             ${selectOptions}
                         </select>
-                        ${npmDependency.isInstalled ? `<button id="update-btn" class="version-btn">Update</button>` : `<button id="install-btn" class="version-btn">Install</button>`}
+                        ${`<button id="install-btn">Install</button>`}
                     </div>
                     <div id="details">
                         <div class="details-section">
@@ -275,12 +334,6 @@ export class NpmRegistryWebView {
         `;
     }
 
-    private getViewScript(): string {
-
-
-        return '';
-    }
-
     private getNonce(): string {
         let text: string = '';
         const possible: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -290,15 +343,15 @@ export class NpmRegistryWebView {
         return text;
     }
 
-    private dispose(): void {
-		this.panel.dispose();
-        this.isOpen = false;
+    // private dispose(): void {
+	// 	this.panel.dispose();
+    //     this.isOpen = false;
 
-		while (this.disposables.length) {
-			const disposable: Disposable | undefined = this.disposables.pop();
-			if (disposable) {
-				disposable.dispose();
-			}
-		}
-	}
+	// 	while (this.disposables.length) {
+	// 		const disposable: Disposable | undefined = this.disposables.pop();
+	// 		if (disposable) {
+	// 			disposable.dispose();
+	// 		}
+	// 	}
+	// }
 }

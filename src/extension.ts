@@ -11,11 +11,11 @@ export function activate(context: ExtensionContext): void {
 	context.subscriptions.push(
 		window.registerTreeDataProvider('npmExplorer', npmExplorerProvider),
 		commands.registerCommand('npmExplorer.refresh', () => npmExplorerProvider.refresh()),
-		commands.registerCommand('npmExplorer.openNpmRegistry', () => showNpmRegistryView(npmRegistry, context)),
+		commands.registerCommand('npmExplorer.openNpmRegistry', () => new NpmRegistryWebView(npmExplorerProvider, context)),
 		commands.registerCommand('npmExplorer.updateAll', () => updateAll(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.npmInstall', () => npmInstall(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.checkOutdated', () => checkOutdated(npmExplorerProvider)),
-		commands.registerCommand('npmExplorer.openNpmRegistryWithDependency', (dependency: Dependency) => showNpmRegistryView(npmRegistry, context)),
+		commands.registerCommand('npmExplorer.openNpmRegistryWithDependency', (dependency: Dependency) => new NpmRegistryWebView(npmExplorerProvider, context, dependency)),
 		commands.registerCommand('npmExplorer.updateDependency', (dependency: Dependency) => updateDependency(dependency, npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.uninstallDependency', (dependency: Dependency) => uninstallDependency(dependency, npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.editDependency', (dependency: Dependency) => editDependency(dependency)),
@@ -27,10 +27,10 @@ export function activate(context: ExtensionContext): void {
 	);
 }
 
-const showNpmRegistryView: (npmRegistry: NpmRegistryWebView, context: ExtensionContext) => void = (npmRegistry, context) => {
-	if (!npmRegistry || !npmRegistry.isOpen) {
-		npmRegistry = new NpmRegistryWebView(context);
-	} else {
-		npmRegistry.showPanel();
-	}
-};
+// const showNpmRegistryView: (npmExplorerProvider: NpmExplorerProvider, npmRegistry: NpmRegistryWebView, context: ExtensionContext, dependency?: Dependency) => void = (npmExplorerProvider, npmRegistry, context, dependency) => {
+// 	if (!npmRegistry || !npmRegistry.isOpen) {
+// 		npmRegistry = new NpmRegistryWebView(npmExplorerProvider, context, dependency);
+// 	} else {
+// 		npmRegistry.showPanel();
+// 	}
+// };

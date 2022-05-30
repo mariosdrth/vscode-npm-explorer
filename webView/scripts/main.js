@@ -1,7 +1,11 @@
 (function () {
     const vscode = acquireVsCodeApi();
-    const counter = (document.getElementById('lines-of-code-counter'));
-    console.log('hello world');
+    const versionSelectOption = (document.getElementById('version'));
+    const installBtn = (document.getElementById('install-btn'));
+
+    installBtn && installBtn.addEventListener('click', event => {
+        vscode.postMessage({command: "installVersion", version: versionSelectOption.value})
+    });
 
     // let currentCount = (oldState && oldState.count) || 0;
     // counter.textContent = `${currentCount}`;
