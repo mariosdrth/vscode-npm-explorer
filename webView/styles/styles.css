@@ -1,0 +1,354 @@
+::selection {
+    background-color: #1596aa;
+    color: white;
+}
+
+a {
+    color: #ba5555;
+    text-decoration: none;
+    font-weight: normal;
+    line-height: 1.4;
+    outline: none !important;
+}
+
+a:hover {
+    color: #ae4747;
+}
+
+#version-wrapper {
+    margin-top: 0.6rem;
+    display: flex;
+}
+
+#version {
+    color: inherit;
+    padding: 0.6rem;
+    width: 15rem;
+    border: none;
+    font-size: 1.2rem;
+    appearance: button;
+    outline: none;
+    background-color: rgba(100, 100, 100, 0.3);
+}
+
+.install-btn-no-hover {
+    background-color: #0563AF;
+    color: white;
+    font-size: 1.2rem;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.8rem;
+}
+
+.install-btn-no-hover:hover {
+    color: white;
+    background-color: #0563AF;
+}
+
+.install-btn-no-hover:active {
+    color: white;
+    background-color: #0563AF;
+}
+
+.install-btn-hover {
+    background-color: #0563AF;
+    color: white;
+    font-size: 1.2rem;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.8rem;
+    transition: background-color 0.2s ease-in;
+}
+
+.install-btn-hover:hover {
+    color: white;
+    background-color: #055494;
+}
+
+.install-btn-hover:active {
+    color: white;
+    background-color: #04467b;
+}
+
+#install-btn-arrow {
+    background-color: #0563AF;
+    color: white;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    height: 3rem;
+    width: 2rem;
+    font-size: 1.2rem;
+}
+
+#install-btn-arrow-icon {
+    padding-top: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+#install-btn-dropdown {
+    background-color: #0563AF;
+    border: none;
+    left: 21rem;
+    
+}
+
+#install-btn-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #0563AF;
+    min-width: 10rem;
+    z-index: 1;
+    color: white;
+}
+
+.install-btn-dropdown-content-link {
+    color: white;
+    padding: 1rem 1.2rem;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s ease-in;
+}
+
+.install-btn-dropdown-content-link:hover {
+    color: white;
+    background-color: #055494;
+}
+
+.install-btn-dropdown-content-link:active {
+    color: white;
+    background-color: #04467b;
+}
+
+#install-btn-dropdown:hover #install-btn-dropdown-content {
+    display: block;
+}
+
+.version-btn:hover {
+    opacity: 0.8;
+}
+
+.version-btn:active {
+    opacity: 0.6;
+}
+
+#search {
+    color: inherit;
+    width: 100%;
+    max-height: 2rem;
+    padding: 1.5rem;
+    display: inline-block;
+    border: 1px solid #cccccc;
+    box-sizing: border-box;
+    outline: none;
+    border-radius: 30px;
+    background-color: rgba(100, 100, 100, 0.2);
+    transition: background-color 0.2s ease-in;
+}
+
+#search:focus {
+    background-color: rgba(100, 100, 100, 0.3);
+}
+
+#search-btn-icon {
+    position: absolute;
+    right: 1.6rem;
+    bottom: 1rem;
+    color: inherit;
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: opacity 0.1s ease-in;
+    cursor: pointer;
+}
+
+#search-btn-img:hover {
+    opacity: 1;
+}
+
+#search-wrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 2rem;
+    position: relative;
+}
+
+#content {
+    display: flex;
+}
+
+#content-info {
+    display: flex;
+    flex-direction: column;
+    border-right: solid 0.1rem;
+    padding-right: 4rem;
+}
+
+#content-info-name {
+    font-size: 2.5rem;
+    margin: 0 0 0 1rem;
+}
+
+#content-info-author {
+    margin: 1rem 0 0 1rem;
+}
+
+#content-info-header {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+#content-info-package-det {
+    display: flex;
+    flex-direction: column;
+}
+
+#content-info-desc {
+    margin-top: 0;
+    margin-bottom: 3rem;
+}
+
+#content-info-icon {
+    font-size: 10rem;
+}
+
+#content-md {
+    padding: 0 10rem;
+}
+
+#content-message {
+    flex: 1 1 auto;
+    display: flex;
+}
+
+#no-md-message {
+    font-size: x-small;
+    margin-left: auto;
+    margin-right: 0.6rem;
+}
+
+#result-list {
+    margin-top: 2rem;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.result-list-item {
+    width: 60%
+}
+
+.result-list-item-btn {
+    border: none;
+    cursor: pointer;
+}
+
+.result-list-item-btn {
+    width: 100%;
+    border-bottom: solid 1px;
+    cursor: pointer;
+    background-color: transparent;
+    color: inherit;
+    transition: background-color 0.1s ease-in;
+}
+
+.result-list-item-header-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.result-list-item-header {
+    margin-right: 1rem;
+}
+
+.result-list-item-btn:hover {
+    background-color: rgba(100, 100, 100, 0.2);
+}
+
+.result-list-item-btn:active {
+    background-color: rgba(100, 100, 100, 0.4);
+}
+
+#search-message-limit {
+    font-size: x-small;
+    margin-left: 0.6rem;
+}
+
+.result-list-item-version {
+    font-size: smaller;
+}
+
+#details {
+    margin-top: 1.5rem;
+}
+
+.details-section {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid;
+}
+
+.details-section-desc {
+    display: flex;
+    align-items: center;
+}
+
+.details-section-link {
+    margin-bottom: 0.6rem;
+}
+
+.details-section-icon {
+    margin-right: 0.3rem;
+}
+
+#content-license {
+    margin-top: 2rem;
+}
+
+#content-info-version {
+    display: flex;
+    align-items: center;
+}
+
+#content-info-version-icon {
+    margin-right: 0.2rem;
+    font-size: 1.2rem;
+}
+
+#no-author {
+    font-style: italic;
+}
+
+#loader-wrapper {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: all 0.2s ease-in;
+}
+
+.visible {
+    visibility: visible !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.version-select-option-dark {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.version-select-option-light {
+    background-color: rgba(100, 100, 100, 0.3);
+}

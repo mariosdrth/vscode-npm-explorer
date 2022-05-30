@@ -2,7 +2,7 @@ import {Event, EventEmitter, RelativePattern, TextDocument, TreeDataProvider, Tr
 import * as path from 'path';
 import * as cp from 'child_process';
 
-type NpmExplorerTreeItem = BaseItem | NpmTask | Dependency;
+export type NpmExplorerTreeItem = BaseItem | NpmTask | Dependency;
 
 interface OutdatedDependency {
     name: string;
@@ -32,7 +32,7 @@ export class NpmExplorerProvider implements TreeDataProvider<NpmExplorerTreeItem
     }
 }
 
-class BaseItem extends TreeItem {
+export class BaseItem extends TreeItem {
     children: NpmTask[] | Dependency[];
 
     constructor(label: string, children: NpmTask[] | Dependency[]) {
@@ -43,12 +43,13 @@ class BaseItem extends TreeItem {
 
 export class Dependency extends TreeItem {
     name: string;
-    version: string;
-    isOutdated: boolean;
-    wantedVersion: string;
-    isDev: boolean;
+    isInstalled: boolean;
+    version?: string;
+    isOutdated?: boolean;
+    wantedVersion?: string;
+    isDev?: boolean;
 
-    constructor(name: string, version: string, isOutdated: boolean, wantedVersion: string, isDev?: boolean) {
+    constructor(name: string, version: string, isOutdated: boolean, wantedVersion: string, isInstalled: boolean, isDev?: boolean) {
         super(name, TreeItemCollapsibleState.None);
         this.description = `Current version: ${version}${isOutdated ? ` - Newer version ${wantedVersion}` : ''}`;
         this.name = name;
@@ -56,14 +57,15 @@ export class Dependency extends TreeItem {
         this.isOutdated = !!isOutdated;
         this.wantedVersion = wantedVersion;
         this.isDev = !!isDev;
+        this.isInstalled = isInstalled;
 
         this.iconPath = {
             light: isOutdated ? path.join(__filename, '..', '..', 'images', 'light', 'dependency_outdated.svg') : path.join(__filename, '..', '..', 'images', 'light', 'dependency.svg'),
             dark: isOutdated ? path.join(__filename, '..', '..', 'images', 'dark', 'dependency_outdated.svg') : path.join(__filename, '..', '..', 'images', 'dark', 'dependency.svg')
         };
-    }
 
-    contextValue: string = 'dependency';
+        this.contextValue = 'dependency';
+    }
 }
 
 export class NpmTask extends TreeItem {
@@ -154,7 +156,7 @@ const getNpmDependencies: (outdatedDependencies: OutdatedDependency[]) => Promis
         if (isOutdated) {
             wantedVersion = outdatedDependency.wanted;
         }
-        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion);
+        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion, true);
     });
 };
 
@@ -174,7 +176,7 @@ const getNpmDevDependencies: (outdatedDependencies: OutdatedDependency[]) => Pro
         if (isOutdated) {
             wantedVersion = outdatedDependency.wanted;
         }
-        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion, true);
+        return new Dependency(entry[0], entry[1], isOutdated, wantedVersion, true, true);
     });
 };
 

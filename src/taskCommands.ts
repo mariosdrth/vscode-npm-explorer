@@ -46,6 +46,20 @@ export const updateDependency: (dependency: Dependency, npmExplorerProvider: Npm
     runNpmTask(npmExplorerProvider, NpmTasks.NPM_UPDATE + extraArguments + ` ${dependency.name}`);
 };
 
+export const installDependency: (dependencyName: string, npmExplorerProvider: NpmExplorerProvider, versionToUpdateTo?: string, asDev?: boolean) => Promise<void> = async (dependencyName, npmExplorerProvider, versionToUpdateTo, asDev) => {
+    let extraArguments: string = '';
+    if (asDev) {
+        extraArguments = ' --save-dev';
+    }
+
+    let dependencyNameAndVersion: string = dependencyName;
+    if (versionToUpdateTo) {
+        dependencyNameAndVersion = `${dependencyNameAndVersion}@${versionToUpdateTo}`;
+    }
+
+    runNpmTask(npmExplorerProvider, NpmTasks.NPM_INSTALL + extraArguments + ` ${dependencyNameAndVersion}`);
+};
+
 export const uninstallDependency: (dependency: Dependency, npmExplorerProvider: NpmExplorerProvider) => Promise<void> = async (dependency, npmExplorerProvider) => {
     let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('uninstallDevCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('uninstallCommandArguments', '');
     if (extraArguments) {

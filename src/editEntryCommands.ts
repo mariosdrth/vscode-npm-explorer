@@ -41,5 +41,5 @@ export const editDependency: (dependency: Dependency) => Promise<void> = async (
     const position: Position = textEditor.document.positionAt(index);
 
     textEditor.revealRange(new Range(position, position));
-    textEditor.selection = new Selection(position, new Position(position.line, position.character + dependency.version.length));
+    textEditor.selection = new Selection(position, new Position(position.line, position.character + (dependency.version ? dependency.version.length : 0)));
 };
