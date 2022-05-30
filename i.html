@@ -1,0 +1,18 @@
+<webview>
+    <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <title>Npm Registry</title>
+        </head>
+        <body style="padding-right: 50px; padding-left: 50px;">
+            <h2>Mocha</h2>
+            <div>
+                <p>Repository</p>
+                <a href="${res.data.repository}">res.data.repository</a>
+                <p>Homepage</p>
+                <a href="${res.data.homepage}">res.data.homepage</a>
+            </div>
+            <div>${marked.parse(res.data.readme)}</div>
+        </body>
+    </html>
+</webview>
