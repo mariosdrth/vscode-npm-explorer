@@ -8,6 +8,7 @@
 
 - Fix bug when workspace root path contained spaces
 - Remove forgotten powershell
+
 ## [1.2.0]
 
 - Run all commands as VS Code tasks
