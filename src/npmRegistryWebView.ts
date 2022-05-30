@@ -62,7 +62,7 @@ export class NpmRegistryWebView {
             .catch(reason => webview.html = reason);
     }
 
-    showPanel() {
+    showPanel(): void {
         if (this.panel) {
             this.panel.reveal(ViewColumn.Active);
         }
@@ -80,7 +80,7 @@ export class NpmRegistryWebView {
 
 
     private async getContent(webview: Webview, context: ExtensionContext, npmDependency?: NpmDependency, searchText?: string): Promise<string> {
-        const nonce = this.getNonce();
+        const nonce: string = this.getNonce();
         let res: any;
         if (searchText) {
             res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}`);
@@ -88,9 +88,9 @@ export class NpmRegistryWebView {
             res = await axios.get(`https://registry.npmjs.org/${npmDependency.name}`);
         }
 
-        const styles = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'styles.css'));
-        const script = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'scripts', 'main.js'));
-        const codiconsUri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'node_modules', 'vscode-codicons', 'dist', 'codicon.css'));
+        const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'styles.css'));
+        const script: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'scripts', 'main.js'));
+        const codiconsUri: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'node_modules', 'vscode-codicons', 'dist', 'codicon.css'));
 
         return `
             <html lang="en">
@@ -154,7 +154,7 @@ export class NpmRegistryWebView {
             return '';
         }
 
-        const latestVersionTag: string = res.data["dist-tags"].latest;
+        const latestVersionTag: string = res.data['dist-tags'].latest;
         const url: string = res.data.repository?.url.replace('git+', '');
         const npmUrl: string = `https://www.npmjs.com/package/${npmDependency.name}`;
         let selectOptionStyle: string = 'background-color: rgba(0, 0, 0, 0.8);';
@@ -255,8 +255,8 @@ export class NpmRegistryWebView {
     }
 
     private getLoadingSpinner(webview: Webview, context: ExtensionContext): string {
-        const nonce = this.getNonce();
-        const styles = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'spinner.css'));
+        const nonce: string = this.getNonce();
+        const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'spinner.css'));
 
         return `
             <html lang="en">
@@ -281,16 +281,16 @@ export class NpmRegistryWebView {
         return '';
     }
 
-    private getNonce() {
-        let text = '';
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < 32; i++) {
+    private getNonce(): string {
+        let text: string = '';
+        const possible: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i: number = 0; i < 32; i++) {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
     }
 
-    private dispose() {
+    private dispose(): void {
 		this.panel.dispose();
         this.isOpen = false;
 
