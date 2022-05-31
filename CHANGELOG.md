@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.2]
+
+- Add error handling
+- Fix search icon
+- Handle pakcage installation interruption
+
 ## [2.0.1]
 
 - Fix bug with icons
