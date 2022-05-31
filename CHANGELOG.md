@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.0.1]
+
+- Fix bug with icons
+
 ## [2.0.0]
 
 - Introduce new webview to browse the npm registry for new/existing dependencies

@@ -2,7 +2,7 @@
 	"name": "vscode-npm-explorer",
 	"displayName": "Npm Explorer",
 	"description": "Explorer view that shows npm tasks and dependencies and allows running/updating/uninstalling/editing them",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"engines": {
 		"vscode": "^1.67.0"
 	},
@@ -266,7 +266,7 @@
 		"theme": "dark"
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run build -- --minify",
+		"vscode:prepublish": "npm run build",
 		"clean": "rimraf out",
 		"compile": "npm run clean && tsc -p ./",
 		"watch": "tsc -watch -p ./",
@@ -298,6 +298,6 @@
 		"typescript": "^4.6.4"
 	},
 	"dependencies": {
-		"vscode-codicons": "0.0.17"
+		"@vscode/codicons": "^0.0.30"
 	}
 }
