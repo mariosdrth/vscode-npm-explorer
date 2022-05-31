@@ -1,4 +1,4 @@
-import {ColorTheme, ColorThemeKind, Disposable, ExtensionContext, Uri, ViewColumn, Webview, WebviewPanel, window} from 'vscode';
+import {ColorTheme, ColorThemeKind, ExtensionContext, Uri, ViewColumn, Webview, WebviewPanel, window} from 'vscode';
 import axios from 'axios';
 import {marked} from 'marked';
 import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
@@ -9,7 +9,6 @@ const SEARCH_SIZE: number = 100;
 export class NpmRegistryWebView {
 
     private panel: WebviewPanel;
-    private disposables: Disposable[] = [];
     private npmExplorerProvider: NpmExplorerProvider;
     private context: ExtensionContext;
     private dependency: Dependency | undefined;
@@ -20,15 +19,16 @@ export class NpmRegistryWebView {
             'npmRegistry',
             'Npm Registry',
             ViewColumn.Active,
-            {enableScripts: true}
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true
+            }
         );
 
         this.dependency = dependency;
         this.npmExplorerProvider = npmExplorerProvider;
         this.context = context;
         this.searchText = searchText;
-
-        this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 
         this.panel.webview.onDidReceiveMessage(
             message => {
@@ -48,7 +48,7 @@ export class NpmRegistryWebView {
                 }
             },
             undefined,
-            this.disposables
+            context.subscriptions
         );
 
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
@@ -107,10 +107,11 @@ export class NpmRegistryWebView {
         }
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         const versionToUpdateTo: string = version.replace(' (latest)', '');
+        const requestedDependency: Dependency = this.dependency;
         installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
             const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
-            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
+            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : requestedDependency;
             this.searchText = undefined;
             this.refreshContent();
         });
@@ -147,12 +148,25 @@ export class NpmRegistryWebView {
     private async getContent(webview: Webview, context: ExtensionContext, dependency?: Dependency, searchText?: string): Promise<string> {
         const nonce: string = this.getNonce();
         let res: any;
+        let error: any;
         let initialSearchText: string = '';
         if (searchText) {
             initialSearchText = searchText;
-            res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}`);
+            try {
+                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}`);
+            } catch (err: any) {
+                error = err.response;
+            }
         } else if (dependency) {
-            res = await axios.get(`https://registry.npmjs.org/${dependency.name}`);
+            try {
+                res = await axios.get(`https://registry.npmjs.org/${dependency.name}`);
+            } catch (err: any) {
+                error = err.response;
+            }
+        }
+
+        if (error) {
+            return this.getErrorPage(webview, context, error);
         }
 
         const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'styles.css'));
@@ -178,11 +192,31 @@ export class NpmRegistryWebView {
                     </div>
                     <div id="search-wrapper">
                         <input value="${initialSearchText}" id="search" type="text" id="package" placeholder="Search Package...">
-                        <i id="search-btn-icon" class="codicon codicon-search"></i>
+                        <button id="search-btn">
+                            <i id="search-btn-icon" class="codicon codicon-search"></i>
+                        </button>
                     </div>
                     ${searchText ? this.getSearchContent(res) : ''}
                     ${dependency ? this.getPackageContent(dependency, res) : ''}
                     <script nonce="${nonce}" src="${script}"></script>
+                </body>
+            </html>
+        `;
+    }
+
+    private getErrorPage(webview: Webview, context: ExtensionContext, error: any): string {
+        const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'error.css'));
+
+        return `
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8">
+                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'none'; style-src ${webview.cspSource}; img-src 'none'; script-src 'none';">
+                    <link href="${styles}" rel="stylesheet"/>
+                <body>
+                    <div id="error-container">
+                        <h1>Server responded with ${error.status} ${error.statusText}!</h1>
+                    </div>
                 </body>
             </html>
         `;
@@ -403,15 +437,4 @@ export class NpmRegistryWebView {
         }
         return text;
     }
-
-    private dispose(): void {
-		this.panel.dispose();
-
-		while (this.disposables.length) {
-			const disposable: Disposable | undefined = this.disposables.pop();
-			if (disposable) {
-				disposable.dispose();
-			}
-		}
-	}
 }
