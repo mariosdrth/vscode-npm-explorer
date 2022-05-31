@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.1.1]
+
+- Fix extremely annoying bug where the package could contain unescaped html code in the description, author etc
+
 ## [2.1.0]
 
 - Add indication of deprecated packages in package.json

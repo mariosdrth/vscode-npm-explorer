@@ -22,7 +22,8 @@ export class NpmRegistryWebView {
             ViewColumn.Active,
             {
                 enableScripts: true,
-                retainContextWhenHidden: true
+                retainContextWhenHidden: true,
+                enableFindWidget: true
             }
         );
 
@@ -223,7 +224,7 @@ export class NpmRegistryWebView {
                     <link href="${styles}" rel="stylesheet"/>
                 <body>
                     <div id="error-container">
-                        <h1>Server responded with ${error.status} ${error.statusText}!</h1>
+                        <h1>Server responded with ${this.cleanHtmlCode(error.status)} ${this.cleanHtmlCode(error.statusText)}!</h1>
                     </div>
                 </body>
             </html>
@@ -246,11 +247,11 @@ export class NpmRegistryWebView {
                     <li class="result-list-item">
                         <button class="result-list-item-btn">
                             <div class="result-list-item-header-wrapper">
-                                <h3 class="result-list-item-header">${entry[1].package.name}</h3>
-                                <p class="result-list-item-version">${entry[1].package.version}</p>
+                                <h3 class="result-list-item-header">${this.cleanHtmlCode(entry[1].package.name)}</h3>
+                                <p class="result-list-item-version">${this.cleanHtmlCode(entry[1].package.version)}</p>
                             </div>
-                            <p>${entry[1].package.description}</p>
-                            ${entry[1].package.author ? `<p>${entry[1].package.author.name}</p>` : '<p id="no-author">No author provided</p>'}
+                            <p>${this.cleanHtmlCode(entry[1].package.description)}</p>
+                            ${entry[1].package.author ? `<p>${this.cleanHtmlCode(entry[1].package.author.name)}</p>` : '<p id="no-author">No author provided</p>'}
                         </button>
                     </li>
                 `;
@@ -314,15 +315,15 @@ export class NpmRegistryWebView {
                     <div id="content-info-header">
                         <i id="content-info-icon" class="codicon codicon-package"></i>
                         <div id="content-info-package-det">
-                            <h2 id="content-info-name">${dependency.name}</h2>
-                            ${author ? `<h3 id="content-info-author">${author}</h3>` : ''}
+                            <h2 id="content-info-name">${this.cleanHtmlCode(dependency.name)}</h2>
+                            ${author ? `<h3 id="content-info-author">${this.cleanHtmlCode(author)}</h3>` : ''}
                         </div>
                     </div>
-                    ${res.data.description ? `<h4 id="content-info-desc">${res.data.description}</h4>` : ''}
+                    ${res.data.description ? `<h4 id="content-info-desc">${this.cleanHtmlCode(res.data.description)}</h4>` : ''}
                     ${dependency.isInstalled
                         ? `<div id="content-info-version">
                                 <i id="content-info-version-icon" class="details-section-icon codicon codicon-verified"></i>
-                                <i id="content-info-installed-version">Version (${installedVersion}) installed${isDev ? ' as dev dependency' : ''}</i>
+                                <i id="content-info-installed-version">Version (${this.cleanHtmlCode(installedVersion)}) installed${isDev ? ' as dev dependency' : ''}</i>
                             </div>`
                         : ''}
                     <div id="version-wrapper">
@@ -346,26 +347,26 @@ export class NpmRegistryWebView {
                                 <i class="details-section-icon codicon codicon-globe"></i>
                                 <h3>Npm Page</h3>
                             </div>
-                            <a class="details-section-link" href="${npmUrl}">${npmUrl}</a>
+                            <a class="details-section-link" href="${this.cleanHtmlCode(npmUrl)}">${this.cleanHtmlCode(npmUrl)}</a>
                         </div>
                         ${url ? `<div class="details-section">
                             <div class="details-section-desc">
                                 <i class="details-section-icon codicon codicon-source-control"></i>
                                 <h3>Repository</h3>
                             </div>
-                            <a class="details-section-link" href="${url}">${url}</a>
+                            <a class="details-section-link" href="${this.cleanHtmlCode(url)}">${this.cleanHtmlCode(url)}</a>
                         </div>` : ''}
                         ${res.data.homepage ? `<div class="details-section">
                             <div class="details-section-desc">
                                 <i class="details-section-icon codicon codicon-link"></i>
                                 <h3>Homepage</h3>
                             </div>
-                            <a class="details-section-link" href="${res.data.homepage}">${res.data.homepage}</a>
+                            <a class="details-section-link" href="${this.cleanHtmlCode(res.data.homepage)}">${this.cleanHtmlCode(res.data.homepage)}</a>
                         </div>` : ''}
                     </div>
                     ${res.data.license ? `<div id="content-license">
                         <h3>License</h3>
-                        ${res.data.license}
+                        ${this.cleanHtmlCode(res.data.license)}
                     </div>` : ''}
                 </div>
                 ${readmeParsed
@@ -444,5 +445,12 @@ export class NpmRegistryWebView {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    private cleanHtmlCode(html: string | undefined): string | undefined {
+        if (!html) {
+            return undefined;
+        }
+        return html.replaceAll('\<', '&lt').replaceAll('\>', '&gt');
     }
 }
