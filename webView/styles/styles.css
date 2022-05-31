@@ -29,6 +29,8 @@ a:hover {
     appearance: button;
     outline: none;
     background-color: rgba(100, 100, 100, 0.3);
+    border-bottom-left-radius: 5px;
+    border-top-left-radius: 5px;
 }
 
 .install-btn-no-hover {
@@ -60,6 +62,8 @@ a:hover {
     cursor: pointer;
     padding: 0.8rem;
     transition: background-color 0.2s ease-in;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
 }
 
 .install-btn-hover:hover {
@@ -76,7 +80,9 @@ a:hover {
     background-color: #0563AF;
     color: white;
     outline: none;
-    border: none;
+    border: 0;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
     cursor: pointer;
     height: 3rem;
     width: 2rem;
@@ -90,7 +96,8 @@ a:hover {
 
 #install-btn-dropdown {
     background-color: #0563AF;
-    border: none;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
     left: 21rem;
     
 }
@@ -152,19 +159,29 @@ a:hover {
     background-color: rgba(100, 100, 100, 0.3);
 }
 
-#search-btn-icon {
-    position: absolute;
-    right: 1.6rem;
-    bottom: 1rem;
-    color: inherit;
-    font-size: 1.2rem;
-    opacity: 0.7;
+#search-btn {
+    opacity: 0.8;
     transition: opacity 0.1s ease-in;
     cursor: pointer;
+    background: transparent;
+    position: absolute;
+    top: 0.1rem;
+    right: 0.3rem;
+    color: inherit;
+    outline: none;
+    border: none;
+    box-shadow: none;
+    width: 3rem;
+    height: 3rem;
 }
 
-#search-btn-img:hover {
+#search-btn:hover {
     opacity: 1;
+}
+
+#search-btn-icon {
+    font-size: 1.2rem;
+    transform: rotateY(180deg);
 }
 
 #search-wrapper {

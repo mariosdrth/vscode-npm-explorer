@@ -6,7 +6,7 @@
     const installBtnDep = document.getElementById('install-btn-dep');
     const installBtnDevDep = document.getElementById('install-btn-dev-dep');
     const loaderWrapper = document.getElementById('loader-wrapper');
-    const searchBtn = document.getElementById('search-btn-icon');
+    const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('search');
     const searchResults = document.getElementsByClassName('result-list-item-btn');
 

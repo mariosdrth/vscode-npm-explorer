@@ -6,12 +6,16 @@ This extension adds a new view in the explorer that shows npm tasks, dependencie
 
 <br/>![Npm Explorer](images/npm-explorer.gif)
 
-The extension offers also a webview to search the npm registry for packages, install directly from there or install different versions from the existing packages, either as production or development dependencies.
+The extension offers also a webview to search the npm registry for packages, install directly from there or install different versions of the existing packages, either as production or development dependencies.
 <br/>The webview can be triggered:
 - From an existing dependency directly (opens the page of this dependency)
 - From the general actions (opens a page to search for packages)
 
 <br/>![Npm Registry](images/npm-registry-view.png)
+
+The extension also marks the outdated dependencies in the package.json in a non-intrusive way, by marking the lines and not the text or the file itself. This can be disabled in the settings in case a more aggressive way to indicate the packages is desired (there are plenty extensions that mark the lines and/or the file)
+
+<br/>![Outdated Dependencies](images/outdated-dependencies.png)
 
 ## Configuration
 

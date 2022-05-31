@@ -1,5 +1,16 @@
 # Change Log
 
+## [2.1.0]
+
+- Add indication of deprecated packages in package.json
+- Fix bugs
+
+## [2.0.2]
+
+- Add error handling
+- Fix search icon
+- Handle pakcage installation interruption
+
 ## [2.0.1]
 
 - Fix bug with icons

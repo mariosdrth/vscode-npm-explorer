@@ -1,5 +1,5 @@
-import {commands, ExtensionContext, window, workspace} from 'vscode';
-import {NpmTask, NpmExplorerProvider, Dependency} from './activityBarView';
+import {commands, ExtensionContext, TextEditor, window, workspace} from 'vscode';
+import {NpmTask, NpmExplorerProvider, Dependency, markPackages} from './activityBarView';
 import {deleteDependency, deleteTask} from './deleteEntryCommand';
 import {editDependency, editTask} from './editEntryCommands';
 import {NpmRegistryWebView} from './npmRegWebView';
@@ -22,6 +22,8 @@ export function activate(context: ExtensionContext): void {
 		commands.registerCommand('npmExplorer.runTask', (task: NpmTask) => runTask(task)),
 		commands.registerCommand('npmExplorer.editTask', (task: NpmTask) => editTask(task)),
 		commands.registerCommand('npmExplorer.deleteTask', (task: NpmTask) => deleteTask(task)),
-		workspace.onDidSaveTextDocument((document) => document.fileName.includes('package.json') && npmExplorerProvider.refresh())
+		workspace.onDidSaveTextDocument((document) => document.fileName.includes('package.json') && npmExplorerProvider.refresh()),
+		workspace.onDidOpenTextDocument(() => markPackages()),
+		window.onDidChangeActiveTextEditor((textEditor: TextEditor | undefined) => textEditor && textEditor.document.fileName.includes('package.json') && markPackages(textEditor))
 	);
 }

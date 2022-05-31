@@ -1,4 +1,4 @@
-import {Event, EventEmitter, RelativePattern, TextDocument, TreeDataProvider, TreeItem, TreeItemCollapsibleState, Uri, workspace, WorkspaceFolder} from 'vscode';
+import {DecorationOptions, Event, EventEmitter, Position, Range, RelativePattern, TextDocument, TextEditor, TextEditorDecorationType, TreeDataProvider, TreeItem, TreeItemCollapsibleState, Uri, window, workspace, WorkspaceFolder} from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 
@@ -9,6 +9,13 @@ interface OutdatedDependency {
     wanted: string;
 }
 
+const pathIcon: string = path.join(__filename, '..', '..', 'images', 'warning.svg');
+const tabDecorationType: TextEditorDecorationType = window.createTextEditorDecorationType({
+    isWholeLine: true,
+    gutterIconPath: pathIcon ? pathIcon : '',
+    gutterIconSize: '70%'
+});
+
 export class NpmExplorerProvider implements TreeDataProvider<NpmExplorerTreeItem> {
     private _onDidChangeTreeData: EventEmitter<NpmExplorerTreeItem | undefined | void> = new EventEmitter<NpmExplorerTreeItem | undefined | void>();
 	readonly onDidChangeTreeData: Event<NpmExplorerTreeItem | undefined | void> = this._onDidChangeTreeData.event;
@@ -18,6 +25,7 @@ export class NpmExplorerProvider implements TreeDataProvider<NpmExplorerTreeItem
 
     refresh(): void {
 		this._onDidChangeTreeData.fire();
+        refreshDecorators();
 	}
 
     getTreeItem(element: NpmExplorerTreeItem): TreeItem {
@@ -83,6 +91,42 @@ export class NpmTask extends TreeItem {
 
     contextValue: string = 'npmTask';
 }
+
+export const markPackages: (textEditor?: TextEditor) => Promise<void> = async (textEditor) => {
+    const shouldShowGutter: boolean = workspace.getConfiguration('npmExplorer').get<boolean>('showGutterInPackageJson', true);
+    if (!shouldShowGutter) {
+        return;
+    }
+    const document: TextDocument | undefined = textEditor ? textEditor.document : window.activeTextEditor?.document;
+    if (!document || !document.fileName.includes('package.json')) {
+        return;
+    }
+    const outdatedDependencies: OutdatedDependency[] = await getOutdatedDependencies();
+    const content: string = document.getText();
+    const tabs: DecorationOptions[] = [];
+
+    if (!outdatedDependencies || outdatedDependencies.length === 0) {
+        return;
+    }
+
+    outdatedDependencies.forEach(dependency => {
+        const match: RegExpExecArray | null = new RegExp(`dependencies":\\s*{.*"${dependency.name}":\\s*"`, 'gmsi').exec(content);
+        if (match && match.index) {
+            const position: Position = document.positionAt(match.index + match[0].length);
+            const decoration: DecorationOptions = {
+                range: new Range(position, position)
+            };
+            tabs.push(decoration);
+        }
+    });
+
+    textEditor ? textEditor.setDecorations(tabDecorationType, tabs) : window.activeTextEditor?.setDecorations(tabDecorationType, tabs);
+};
+
+const refreshDecorators: () => void = () => {
+    window.activeTextEditor?.setDecorations(tabDecorationType, []);
+    markPackages();
+};
 
 export const getPackageJsonUri: () => Promise<Uri | null> = async () => {
     let relativePattern: RelativePattern;
