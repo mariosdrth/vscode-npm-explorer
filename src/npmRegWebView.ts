@@ -13,6 +13,7 @@ export class NpmRegistryWebView {
     private context: ExtensionContext;
     private dependency: Dependency | undefined;
     private searchText: string | undefined;
+    private isDisposed: boolean;
 
     constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
         this.panel = window.createWebviewPanel(
@@ -29,6 +30,9 @@ export class NpmRegistryWebView {
         this.npmExplorerProvider = npmExplorerProvider;
         this.context = context;
         this.searchText = searchText;
+        this.isDisposed = false;
+
+        this.panel.onDidDispose(() => this.isDisposed = true);
 
         this.panel.webview.onDidReceiveMessage(
             message => {
@@ -93,10 +97,12 @@ export class NpmRegistryWebView {
         const versionToUpdateTo: string = version.replace(' (latest)', '');
         installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, this.dependency.isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
-            const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
-            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
-            this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev});
-            this.updateLoadingState(false);
+            if (!this.isDisposed) {
+                const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+                this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
+                this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev});
+                this.updateLoadingState(false);
+            }
         });
     }
 
@@ -110,10 +116,12 @@ export class NpmRegistryWebView {
         const requestedDependency: Dependency = this.dependency;
         installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
-            const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
-            this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : requestedDependency;
-            this.searchText = undefined;
-            this.refreshContent();
+            if (!this.isDisposed) {
+                const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+                this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : requestedDependency;
+                this.searchText = undefined;
+                this.refreshContent();
+            }
         });
     }
 

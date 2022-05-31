@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.1.0]
+
+- Add indication of deprecated packages in package.json
+- Fix bugs
+
 ## [2.0.2]
 
 - Add error handling

@@ -39,7 +39,7 @@ export const updateDependency: (dependency: Dependency, npmExplorerProvider: Npm
     let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('updateDevCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('updateCommandArguments', '');
     if (extraArguments) {
         extraArguments = ` ${extraArguments}`;
-    } else {
+    } else if (dependency.isDev) {
         extraArguments = ' --save-dev';
     }
 
@@ -64,7 +64,7 @@ export const uninstallDependency: (dependency: Dependency, npmExplorerProvider: 
     let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('uninstallDevCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('uninstallCommandArguments', '');
     if (extraArguments) {
         extraArguments = ` ${extraArguments}`;
-    } else {
+    } else if (dependency.isDev) {
         extraArguments = ' --save-dev';
     }
     
