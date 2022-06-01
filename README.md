@@ -27,6 +27,7 @@ These settings are probably better used as workspace settings instead of user se
 - Update Dev Dependency Command Arguments: extra arguments to be passed to ``npm update`` (for dev dependency, if empty the command will run with --save-dev)
 - Uninstall Dev Dependency Command Arguments: extra arguments to be passed to ``npm uninstall`` (for dev dependency, if empty the command will run with --save-dev)
 - Install Command Arguments: extra arguments to be passed to ``npm install``
+- Show Gutter In Package JSON: should outdated packages be indicated as such in package.json
 
 <br/>![Settings Screenshot](images/settings.png)
 

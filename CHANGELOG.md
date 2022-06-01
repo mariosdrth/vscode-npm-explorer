@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.1.2]
+
+- Fix error handling
+- Don't include private packages in outdated
+
 ## [2.1.1]
 
 - Fix extremely annoying bug where the package could contain unescaped html code in the description, author etc

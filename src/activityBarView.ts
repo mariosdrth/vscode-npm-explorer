@@ -250,7 +250,7 @@ const getOutdatedDependencies: () => Promise<OutdatedDependency[]> = async () =>
         }
 
         return Object.entries(JSON.parse(await execShell(`npm ${commandPrefix} outdated --json`)))
-        .filter((entry: any) => entry[1].current !== entry[1].wanted)
+        .filter((entry: any) => entry[1].wanted !== 'linked' && entry[1].wanted !== 'git' && entry[1].current !== entry[1].wanted)
         .map((entry: any) => ({name: entry[0], wanted: entry[1].wanted}));
     }
 

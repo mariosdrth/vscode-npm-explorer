@@ -224,7 +224,7 @@ export class NpmRegistryWebView {
                     <link href="${styles}" rel="stylesheet"/>
                 <body>
                     <div id="error-container">
-                        <h1>Server responded with ${this.cleanHtmlCode(error.status)} ${this.cleanHtmlCode(error.statusText)}!</h1>
+                        <h1>Server responded with ${error.status} ${this.cleanHtmlCode(error.statusText)}!</h1>
                     </div>
                 </body>
             </html>
