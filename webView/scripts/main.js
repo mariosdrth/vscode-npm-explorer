@@ -1,7 +1,6 @@
 (function () {
     const vscode = acquireVsCodeApi();
     const versionSelectOption = document.getElementById('version');
-    const installedVersion = document.getElementById('content-info-installed-version');
     const installBtn = document.getElementById('install-btn');
     const installBtnDep = document.getElementById('install-btn-dep');
     const installBtnDevDep = document.getElementById('install-btn-dev-dep');
@@ -69,16 +68,6 @@
             case 'hideLoading':
                 loaderWrapper && loaderWrapper.classList.add('invisible');
                 loaderWrapper && loaderWrapper.classList.remove('visible');
-                break;
-            case 'updateVersion':
-                installedVersion && (installedVersion.innerText = `Version (${message.newVersion ? message.newVersion : ''}) installed${message.isDev ? ' as dev dependency' : ''}`);
-                if (wantedVersion) {
-                    if (message.wantedVersion === message.newVersion) {
-                        wantedVersion.remove();
-                    } else {
-                        wantedVersion.innerHTML = `Wanted version (as derived from package.json): <a href="">${message.wantedVersion}</a>`;
-                    }
-                }
                 break;
             case 'updateVersionSelectOptionClass':
                 versionSelectOption && (Array.from(versionSelectOption.getElementsByClassName('version-select-option')).forEach(el => {

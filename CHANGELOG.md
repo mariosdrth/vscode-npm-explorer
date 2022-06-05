@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.3.2]
+
+- Add wanted version in view
+- Add Weekly downloads in view
+- Add confirmation message for updating all dependencies
+
 ## [2.2.2]
 
 - Add option to select package.json path from the view

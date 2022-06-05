@@ -200,6 +200,7 @@ a:hover {
     flex-direction: column;
     border-right: solid 0.1rem;
     padding-right: 4rem;
+    min-width: 25%;
 }
 
 #content-info-name {
@@ -368,4 +369,24 @@ a:hover {
 
 .version-select-option-light {
     background-color: rgba(100, 100, 100, 0.3);
+}
+
+#weekly-downloads-header {
+    padding-top: 1.5rem;
+}
+
+.weekly-downloads {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0.5rem 0.8rem;
+}
+
+.weekly-downloads-item {
+    display: flex;
+    align-items: center;
+}
+
+.weekly-downloads-date {
+    font-size: 1rem;
+    margin: 0.5rem 0;
 }

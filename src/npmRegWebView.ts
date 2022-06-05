@@ -65,14 +65,14 @@ export class NpmRegistryWebView {
     }
 
     // Actions triggered from the view
-    private searchForPackages(searchtext: string): void {
+    private async searchForPackages(searchtext: string): Promise<void> {
         if (!searchtext) {
             return;
         }
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         this.dependency = undefined;
         this.searchText = searchtext;
-        this.refreshContent();
+        await this.refreshContent();
     }
 
     private async selectPackage(packageName: string): Promise<void> {
@@ -94,15 +94,17 @@ export class NpmRegistryWebView {
         if (!this.dependency.isInstalled) {
             return;
         }
-        this.updateLoadingState(true);
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         const versionToUpdateTo: string = version.replace(' (latest)', '');
-        installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, this.dependency.isDev);
+        await installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, this.dependency.isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
             if (!this.isDisposed) {
-                const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
-                this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
-                this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev, wantedVersion: this.dependency?.wantedVersion});
-                this.updateLoadingState(false);
+                setTimeout(async () => {
+                    const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+                    this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
+                    this.searchText = undefined;
+                    this.refreshContent();
+                }, 1000);
             }
         });
     }
@@ -115,13 +117,15 @@ export class NpmRegistryWebView {
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         const versionToUpdateTo: string = version.replace(' (latest)', '');
         const requestedDependency: Dependency = this.dependency;
-        installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, isDev);
+        await installDependency(this.dependency.name, this.npmExplorerProvider, versionToUpdateTo, isDev);
         this.npmExplorerProvider.onDidChangeTreeData(async () => {
             if (!this.isDisposed) {
-                const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
-                this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : requestedDependency;
-                this.searchText = undefined;
-                this.refreshContent();
+                setTimeout(async () => {
+                    const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
+                    this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : requestedDependency;
+                    this.searchText = undefined;
+                    this.refreshContent();
+                }, 1000);
             }
         });
     }
@@ -157,6 +161,7 @@ export class NpmRegistryWebView {
     private async getContent(webview: Webview, context: ExtensionContext, dependency?: Dependency, searchText?: string): Promise<string> {
         const nonce: string = this.getNonce();
         let res: any;
+        let resDownloads: any;
         let error: any;
         let initialSearchText: string = '';
         if (searchText) {
@@ -169,6 +174,7 @@ export class NpmRegistryWebView {
         } else if (dependency) {
             try {
                 res = await axios.get(`https://registry.npmjs.org/${dependency.name}`);
+                resDownloads = await axios.get(`https://api.npmjs.org/downloads/range/last-month/${dependency.name}`);
             } catch (err: any) {
                 error = err.response;
             }
@@ -206,7 +212,7 @@ export class NpmRegistryWebView {
                         </button>
                     </div>
                     ${searchText ? this.getSearchContent(res) : ''}
-                    ${dependency ? this.getPackageContent(dependency, res) : ''}
+                    ${dependency ? this.getPackageContent(dependency, res, resDownloads) : ''}
                     <script nonce="${nonce}" src="${script}"></script>
                 </body>
             </html>
@@ -266,13 +272,12 @@ export class NpmRegistryWebView {
         `;
     }
 
-    private getPackageContent(dependency: Dependency, res: any): string {
+    private getPackageContent(dependency: Dependency, res: any, resDownloads: any): string {
         if (!res && !res.data) {
             return '';
         }
 
         const latestVersionTag: string = res.data['dist-tags'].latest;
-        const url: string = res.data.repository?.url.replace('git+', '');
         const npmUrl: string = `https://www.npmjs.com/package/${dependency.name}`;
         const versions: any[] = Object.entries(res.data.versions).reverse().map((entry: any) => ({versionTag: entry[0], details: entry[1]}));
         const selectOptions: string = versions
@@ -282,10 +287,35 @@ export class NpmRegistryWebView {
                                 ${version.versionTag === latestVersionTag ? `${version.versionTag} (latest)` : version.versionTag}</option>`;
                 })
                 .join('');
+        let url: string = '';
+        if (res.data.repository.url) {
+            // Sometimes repo urls start with git+ or git:// (npm registry...)
+            url = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
+        }
+
+        const lastMonthDownloads: {downloads: number, day: string}[] = resDownloads.data.downloads;
+        const weeklyDownloads: {start: string, end: string, downloads: number}[] = [];
+        const chunkSize: number = 7;
+        for (let i: number = 0; i < lastMonthDownloads.length; i += chunkSize) {
+            const chunk: {downloads: number, day: string}[] = lastMonthDownloads.slice(i, i + chunkSize);
+            const start: string = chunk[0].day;
+            const end: string = chunk[chunk.length - 1].day;
+            const downloads: number = chunk.reduce((partialSum, a) => partialSum + a.downloads, 0);
+            weeklyDownloads.push({start: this.formatDate(start), end: this.formatDate(end), downloads: downloads});
+        }
+        const weeklyDownloadsEl: string = weeklyDownloads.map(item => {
+            return `
+                    <div class="weekly-downloads-item">
+                        <p class="weekly-downloads-date">${item.start} - ${item.end}: </p>
+                        <p class="weekly-downloads">${item.downloads.toLocaleString()}</p>
+                    </div>
+                `;
+        }).join('');
+
         let readmeParsed: string = marked.parse(res.data.readme);
 
         if (!readmeParsed) {
-            //Sometimes the latest readme is not there (npm registry issue), try and get it from the previous version
+            // Sometimes the latest readme is not there (npm registry issue again), try and get it from the previous version
             if (versions[1].details?.readme) {
                 readmeParsed = marked.parse(versions[1].details.readme);
             }
@@ -328,7 +358,7 @@ export class NpmRegistryWebView {
                             </div>
                             ${dependency.isOutdated && dependency.wantedVersion ? `<div class="content-info-version">
                                 <i class="details-section-icon codicon codicon-info content-info-version-icon"></i>
-                                <i id="content-info-wanted-version">Wanted version (as derived from package.json): <a href="">${dependency.wantedVersion}</a></i>
+                                <i id="content-info-wanted-version">Wanted version (as derived from package.json): <a title="Select Version" href="">${dependency.wantedVersion === latestVersionTag ? `${dependency.wantedVersion} (latest)` : dependency.wantedVersion}</a></i>
                             </div>` : ''}
                             </div>`
                         : ''}
@@ -374,6 +404,10 @@ export class NpmRegistryWebView {
                         <h3>License</h3>
                         ${this.cleanHtmlCode(res.data.license)}
                     </div>` : ''}
+                    <div>
+                        <h2 id="weekly-downloads-header">Weekly downloads (last month)</h2>
+                        ${weeklyDownloadsEl}
+                    </div>
                 </div>
                 ${readmeParsed
                     ? `<div id="content-md">${readmeParsed}</div>`
@@ -458,5 +492,22 @@ export class NpmRegistryWebView {
             return undefined;
         }
         return html.replaceAll('\<', '&lt').replaceAll('\>', '&gt');
+    }
+
+    private formatDate(dateString: string): string {
+        const date: Date = new Date(dateString);
+        const year: number = date.getFullYear();
+        let month: number | string = date.getMonth() + 1;
+        let day: number | string = date.getDate();
+
+        if (day < 10) {
+            day = '0' + day;
+        }
+
+        if (month < 10) {
+            month = '0' + month;
+        }
+
+        return `${day}-${month}-${year}`;
     }
 }

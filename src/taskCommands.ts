@@ -1,4 +1,4 @@
-import {ShellExecution, Task, tasks, TaskScope, workspace} from 'vscode';
+import {ShellExecution, Task, tasks, TaskScope, window, workspace} from 'vscode';
 import {Dependency, NpmExplorerProvider, NpmTask} from './activityBarView';
 
 enum NpmTasks {
@@ -24,7 +24,10 @@ export const checkOutdated: (npmExplorerProvider: NpmExplorerProvider) => Promis
 };
 
 export const updateAll: (npmExplorerProvider: NpmExplorerProvider) => Promise<void> = async (npmExplorerProvider) => {
-    runNpmTask(npmExplorerProvider, NpmTasks.NPM_UPDATE);
+    const answer: string | undefined = await window.showInformationMessage('Are you sure?', 'Yes', 'No');
+    if (answer && answer === 'Yes') {
+        runNpmTask(npmExplorerProvider, NpmTasks.NPM_UPDATE);
+    }
 };
 
 export const npmInstall: (npmExplorerProvider: NpmExplorerProvider) => Promise<void> = async (npmExplorerProvider) => {
