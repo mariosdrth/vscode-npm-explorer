@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.2.2]
+
+- Add option to select package.json path from the view
+
 ## [2.1.2]
 
 - Fix error handling
