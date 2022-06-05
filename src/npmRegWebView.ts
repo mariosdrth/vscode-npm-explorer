@@ -101,7 +101,7 @@ export class NpmRegistryWebView {
             if (!this.isDisposed) {
                 const installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency);
                 this.dependency = installedDependency ? {...installedDependency, isInstalled: true} : undefined;
-                this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev});
+                this.panel.webview.postMessage({command: 'updateVersion', newVersion: this.dependency?.version, isdev: this.dependency?.isDev, wantedVersion: this.dependency?.wantedVersion});
                 this.updateLoadingState(false);
             }
         });
@@ -321,9 +321,15 @@ export class NpmRegistryWebView {
                     </div>
                     ${res.data.description ? `<h4 id="content-info-desc">${this.cleanHtmlCode(res.data.description)}</h4>` : ''}
                     ${dependency.isInstalled
-                        ? `<div id="content-info-version">
-                                <i id="content-info-version-icon" class="details-section-icon codicon codicon-verified"></i>
+                        ? `<div>
+                            <div class="content-info-version">
+                                <i class="details-section-icon codicon codicon-verified content-info-version-icon"></i>
                                 <i id="content-info-installed-version">Version (${this.cleanHtmlCode(installedVersion)}) installed${isDev ? ' as dev dependency' : ''}</i>
+                            </div>
+                            ${dependency.isOutdated && dependency.wantedVersion ? `<div class="content-info-version">
+                                <i class="details-section-icon codicon codicon-info content-info-version-icon"></i>
+                                <i id="content-info-wanted-version">Wanted version (as derived from package.json): <a href="">${dependency.wantedVersion}</a></i>
+                            </div>` : ''}
                             </div>`
                         : ''}
                     <div id="version-wrapper">

@@ -8,6 +8,7 @@
     const loaderWrapper = document.getElementById('loader-wrapper');
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('search');
+    const wantedVersion = document.getElementById('content-info-wanted-version');
     const searchResults = document.getElementsByClassName('result-list-item-btn');
 
     window.onload = () => {
@@ -51,6 +52,13 @@
         });
     });
 
+    wantedVersion && wantedVersion.addEventListener('click', (e) => {
+        const version = e.target.innerText;
+        if (version && versionSelectOption) {
+            versionSelectOption.value = version;
+        }
+    });
+
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.command) {
@@ -64,6 +72,13 @@
                 break;
             case 'updateVersion':
                 installedVersion && (installedVersion.innerText = `Version (${message.newVersion ? message.newVersion : ''}) installed${message.isDev ? ' as dev dependency' : ''}`);
+                if (wantedVersion) {
+                    if (message.wantedVersion === message.newVersion) {
+                        wantedVersion.remove();
+                    } else {
+                        wantedVersion.innerHTML = `Wanted version (as derived from package.json): <a href="">${message.wantedVersion}</a>`;
+                    }
+                }
                 break;
             case 'updateVersionSelectOptionClass':
                 versionSelectOption && (Array.from(versionSelectOption.getElementsByClassName('version-select-option')).forEach(el => {

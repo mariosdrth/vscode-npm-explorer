@@ -4,7 +4,7 @@
 }
 
 a {
-    color: #ba5555;
+    color: #ea6262;
     text-decoration: none;
     font-weight: normal;
     line-height: 1.4;
@@ -12,7 +12,7 @@ a {
 }
 
 a:hover {
-    color: #ae4747;
+    color: #e74b4b;
 }
 
 #version-wrapper {
@@ -326,12 +326,12 @@ a:hover {
     margin-top: 2rem;
 }
 
-#content-info-version {
+.content-info-version {
     display: flex;
     align-items: center;
 }
 
-#content-info-version-icon {
+.content-info-version-icon {
     margin-right: 0.2rem;
     font-size: 1.2rem;
 }
