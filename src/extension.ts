@@ -3,6 +3,7 @@ import {NpmTask, NpmExplorerProvider, Dependency, markPackages} from './activity
 import {deleteDependency, deleteTask} from './deleteEntryCommand';
 import {editDependency, editTask} from './editEntryCommands';
 import {NpmRegistryWebView} from './npmRegWebView';
+import {selectPath} from './selectPathCommand';
 import {checkOutdated, npmInstall, runTask, uninstallDependency, updateAll, updateDependency} from './taskCommands';
 
 export function activate(context: ExtensionContext): void {
@@ -14,6 +15,7 @@ export function activate(context: ExtensionContext): void {
 		commands.registerCommand('npmExplorer.updateAll', () => updateAll(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.npmInstall', () => npmInstall(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.checkOutdated', () => checkOutdated(npmExplorerProvider)),
+		commands.registerCommand('npmExplorer.showPopUpForPath', () => selectPath(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.openNpmRegistryWithDependency', (dependency: Dependency) => new NpmRegistryWebView(npmExplorerProvider, context, dependency)),
 		commands.registerCommand('npmExplorer.updateDependency', (dependency: Dependency) => updateDependency(dependency, npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.uninstallDependency', (dependency: Dependency) => uninstallDependency(dependency, npmExplorerProvider)),

@@ -2,7 +2,7 @@
 	"name": "vscode-npm-explorer",
 	"displayName": "Npm Explorer",
 	"description": "Explorer view that shows npm tasks and dependencies and allows running/updating/uninstalling/editing them",
-	"version": "2.1.2",
+	"version": "2.2.2",
 	"engines": {
 		"vscode": "^1.67.0"
 	},
@@ -128,6 +128,14 @@
 					"light": "images/light/npm_browser.svg",
 					"dark": "images/dark/npm_browser.svg"
 				}
+			},
+			{
+				"command": "npmExplorer.showPopUpForPath",
+				"title": "Select package.json",
+				"icon": {
+					"light": "images/light/cog.svg",
+					"dark": "images/dark/cog.svg"
+				}
 			}
 		],
 		"configuration": {
@@ -212,6 +220,11 @@
 					"command": "npmExplorer.refresh",
 					"when": "view == npmExplorer",
 					"group": "navigation@5"
+				},
+				{
+					"command": "npmExplorer.showPopUpForPath",
+					"when": "view == npmExplorer",
+					"group": "navigation@6"
 				}
 			],
 			"view/item/context": [
