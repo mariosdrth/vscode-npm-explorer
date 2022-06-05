@@ -4,7 +4,7 @@
 }
 
 a {
-    color: #ba5555;
+    color: #ea6262;
     text-decoration: none;
     font-weight: normal;
     line-height: 1.4;
@@ -12,7 +12,7 @@ a {
 }
 
 a:hover {
-    color: #ae4747;
+    color: #e74b4b;
 }
 
 #version-wrapper {
@@ -200,6 +200,7 @@ a:hover {
     flex-direction: column;
     border-right: solid 0.1rem;
     padding-right: 4rem;
+    min-width: 25%;
 }
 
 #content-info-name {
@@ -326,12 +327,12 @@ a:hover {
     margin-top: 2rem;
 }
 
-#content-info-version {
+.content-info-version {
     display: flex;
     align-items: center;
 }
 
-#content-info-version-icon {
+.content-info-version-icon {
     margin-right: 0.2rem;
     font-size: 1.2rem;
 }
@@ -368,4 +369,24 @@ a:hover {
 
 .version-select-option-light {
     background-color: rgba(100, 100, 100, 0.3);
+}
+
+#weekly-downloads-header {
+    padding-top: 1.5rem;
+}
+
+.weekly-downloads {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0.5rem 0.8rem;
+}
+
+.weekly-downloads-item {
+    display: flex;
+    align-items: center;
+}
+
+.weekly-downloads-date {
+    font-size: 1rem;
+    margin: 0.5rem 0;
 }
