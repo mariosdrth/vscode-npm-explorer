@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.3.3]
+
+- Fix regression bug with url
+
 ## [2.3.2]
 
 - Add wanted version in view

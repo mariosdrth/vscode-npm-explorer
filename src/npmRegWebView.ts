@@ -288,7 +288,7 @@ export class NpmRegistryWebView {
                 })
                 .join('');
         let url: string = '';
-        if (res.data.repository.url) {
+        if (res.data.repository?.url) {
             // Sometimes repo urls start with git+ or git:// (npm registry...)
             url = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
         }
