@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.4.3]
+
+- Show downloads in line graph
+
 ## [2.3.3]
 
 - Fix regression bug with url

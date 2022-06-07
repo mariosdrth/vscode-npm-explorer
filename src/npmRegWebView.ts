@@ -3,8 +3,10 @@ import axios from 'axios';
 import {marked} from 'marked';
 import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
 import {installDependency} from './taskCommands';
+import path = require('path');
 
 const SEARCH_SIZE: number = 100;
+type PackageDownloads = {downloads: number, day: string};
 
 export class NpmRegistryWebView {
 
@@ -14,6 +16,7 @@ export class NpmRegistryWebView {
     private dependency: Dependency | undefined;
     private searchText: string | undefined;
     private isDisposed: boolean;
+    private weeklyDownloads: {start: string, end: string, downloads: number}[];
 
     constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
         this.panel = window.createWebviewPanel(
@@ -32,6 +35,7 @@ export class NpmRegistryWebView {
         this.context = context;
         this.searchText = searchText;
         this.isDisposed = false;
+        this.weeklyDownloads = [];
 
         this.panel.onDidDispose(() => this.isDisposed = true);
 
@@ -56,6 +60,9 @@ export class NpmRegistryWebView {
             context.subscriptions
         );
 
+        this.panel.iconPath = Uri.file(
+            path.join(__filename, '..', '..', 'images', 'view-icon.svg')
+        );
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         this.refreshContent();
 
@@ -131,13 +138,26 @@ export class NpmRegistryWebView {
     }
 
     // Actions updating the view
-    private updateSelectClass(colorTheme?: ColorTheme): void {
+    private async updateSelectClass(colorTheme?: ColorTheme): Promise<void> {
         let isDark: boolean = true;
         let activeColorTheme: ColorTheme = colorTheme ? colorTheme : window.activeColorTheme;
         if (activeColorTheme.kind === ColorThemeKind.Light || activeColorTheme.kind === ColorThemeKind.HighContrastLight) {
             isDark = false;
         }
-        this.panel.webview.postMessage({command: 'updateVersionSelectOptionClass', isDark: isDark});
+        await this.panel.webview.postMessage({command: 'updateVersionSelectOptionClass', isDark: isDark});
+    }
+
+    private async updateGraph(): Promise<void> {
+        if (!this.weeklyDownloads || this.weeklyDownloads.length === 0) {
+            return;
+        }
+        const xValues: string[] = [];
+        const yValues: number[] = [];
+        this.weeklyDownloads.map(item => {
+            xValues.push(`${item.start} - ${item.end}`);
+            yValues.push(item.downloads);
+        });
+        await this.panel.webview.postMessage({command: 'buildGraph', xValues: xValues, yValues: yValues, initialDownloadValue: yValues[yValues.length - 1].toLocaleString('en-US')});
     }
 
     private updateLoadingState(show: boolean): void {
@@ -150,9 +170,10 @@ export class NpmRegistryWebView {
 
     private async refreshContent(): Promise<void> {
         this.getContent(this.panel.webview, this.context, this.dependency, this.searchText)
-            .then((value) => {
+            .then(async (value) => {
                 this.panel.webview.html = value;
-                this.updateSelectClass();
+                await this.updateSelectClass();
+                await this.updateGraph();
             })
             .catch(reason => this.panel.webview.html = reason);
     }
@@ -174,7 +195,7 @@ export class NpmRegistryWebView {
         } else if (dependency) {
             try {
                 res = await axios.get(`https://registry.npmjs.org/${dependency.name}`);
-                resDownloads = await axios.get(`https://api.npmjs.org/downloads/range/last-month/${dependency.name}`);
+                resDownloads = await axios.get(`https://api.npmjs.org/downloads/range/last-year/${dependency.name}`);
             } catch (err: any) {
                 error = err.response;
             }
@@ -187,13 +208,14 @@ export class NpmRegistryWebView {
         const styles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'styles.css'));
         const loadingStyles: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'styles', 'spinner.css'));
         const script: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'scripts', 'main.js'));
+        const chartScript: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'webView', 'scripts', 'chart.min.js'));
         const codiconsUri: Uri = webview.asWebviewUri(Uri.joinPath(context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
 
         return `
             <html lang="en">
                 <head>
                     <meta charset="utf-8">
-                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} \'unsafe-inline\'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
                     <link href="${styles}" rel="stylesheet"/>
                     <link href="${codiconsUri}" rel="stylesheet"/>
                     <link href="${loadingStyles}" rel="stylesheet"/>
@@ -214,6 +236,7 @@ export class NpmRegistryWebView {
                     ${searchText ? this.getSearchContent(res) : ''}
                     ${dependency ? this.getPackageContent(dependency, res, resDownloads) : ''}
                     <script nonce="${nonce}" src="${script}"></script>
+                    <script nonce="${nonce}" src="${chartScript}"></script>
                 </body>
             </html>
         `;
@@ -293,24 +316,21 @@ export class NpmRegistryWebView {
             url = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
         }
 
-        const lastMonthDownloads: {downloads: number, day: string}[] = resDownloads.data.downloads;
-        const weeklyDownloads: {start: string, end: string, downloads: number}[] = [];
+        const lastYearDownloads: PackageDownloads[] = resDownloads.data.downloads;
+        const weeklyDownloadsLocal: {start: string, end: string, downloads: number}[] = [];
         const chunkSize: number = 7;
-        for (let i: number = 0; i < lastMonthDownloads.length; i += chunkSize) {
-            const chunk: {downloads: number, day: string}[] = lastMonthDownloads.slice(i, i + chunkSize);
+        for (let i: number = lastYearDownloads.length; i > 0; i -= chunkSize) {
+            const chunk: PackageDownloads[] = lastYearDownloads.slice(i - chunkSize, i);
+            if (chunk.length < chunkSize) {
+                break;
+            }
             const start: string = chunk[0].day;
             const end: string = chunk[chunk.length - 1].day;
             const downloads: number = chunk.reduce((partialSum, a) => partialSum + a.downloads, 0);
-            weeklyDownloads.push({start: this.formatDate(start), end: this.formatDate(end), downloads: downloads});
+            weeklyDownloadsLocal.unshift({start: this.formatDate(start), end: this.formatDate(end), downloads: downloads});
         }
-        const weeklyDownloadsEl: string = weeklyDownloads.map(item => {
-            return `
-                    <div class="weekly-downloads-item">
-                        <p class="weekly-downloads-date">${item.start} - ${item.end}: </p>
-                        <p class="weekly-downloads">${item.downloads.toLocaleString()}</p>
-                    </div>
-                `;
-        }).join('');
+        this.weeklyDownloads = weeklyDownloadsLocal;
+        const lastWeekDownloads: string = this.weeklyDownloads[this.weeklyDownloads.length - 1].downloads.toLocaleString('en-US');
 
         let readmeParsed: string = marked.parse(res.data.readme);
 
@@ -405,8 +425,13 @@ export class NpmRegistryWebView {
                         ${this.cleanHtmlCode(res.data.license)}
                     </div>` : ''}
                     <div>
-                        <h2 id="weekly-downloads-header">Weekly downloads (last month)</h2>
-                        ${weeklyDownloadsEl}
+                        <h3 id="weekly-downloads-header">Downloads</h3>
+                        <div id="weekly-downloads-section-wrapper">
+                            <i class="weekly-downloads-icon codicon codicon-cloud-download"></i>
+                            <h3 id="weekly-downloads-week">Weekly Downloads:</h3>
+                            <p id="weekly-downloads">${lastWeekDownloads}</p>
+                        </div>
+                        <canvas id="weekly-downloads-plot"></canvas>
                     </div>
                 </div>
                 ${readmeParsed

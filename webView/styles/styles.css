@@ -371,22 +371,27 @@ a:hover {
     background-color: rgba(100, 100, 100, 0.3);
 }
 
+#weekly-downloads-plot {
+    max-height: 10rem;
+    max-width: 40rem;
+}
+
 #weekly-downloads-header {
-    padding-top: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
 }
 
-.weekly-downloads {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin: 0.5rem 0 0.5rem 0.8rem;
-}
-
-.weekly-downloads-item {
+#weekly-downloads-section-wrapper {
     display: flex;
     align-items: center;
 }
 
-.weekly-downloads-date {
-    font-size: 1rem;
-    margin: 0.5rem 0;
+#weekly-downloads {
+    margin-left: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.weekly-downloads-icon {
+    font-size: 1.3rem !important;
+    margin-right: 0.5rem;
 }
