@@ -5,7 +5,6 @@ import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
 import {installDependency} from './taskCommands';
 import * as path from 'path';
 
-const SEARCH_SIZE: number = 20;
 type PackageDownloads = {downloads: number, day: string};
 type DateDiff = {days: number, months: number, years: number};
 
@@ -20,6 +19,7 @@ export class NpmRegistryWebView {
     private searchResultsFrom: number;
     private activePage: number;
     private totalPages: number;
+    private searchSize: number;
     private weeklyDownloads: {start: string, end: string, downloads: number}[];
 
     constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
@@ -43,6 +43,7 @@ export class NpmRegistryWebView {
         this.searchResultsFrom = 0;
         this.activePage = 1;
         this.totalPages = 0;
+        this.searchSize = 20;
 
         this.panel.onDidDispose(() => this.isDisposed = true);
 
@@ -108,7 +109,7 @@ export class NpmRegistryWebView {
     private async pageClicked(page: number): Promise<void> {
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         this.activePage = page;
-        this.searchResultsFrom = (this.activePage - 1) * SEARCH_SIZE;
+        this.searchResultsFrom = (this.activePage - 1) * this.searchSize;
         await this.refreshContent();
     }
 
@@ -117,11 +118,14 @@ export class NpmRegistryWebView {
     }
 
     private async searchForPackages(searchtext: string): Promise<void> {
-        if (!searchtext) {
+        if (!searchtext || searchtext === this.searchText) {
             return;
         }
         this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
         this.dependency = undefined;
+        this.activePage = 1;
+        this.searchResultsFrom = 0;
+        this.searchSize = 20;
         this.searchText = searchtext;
         await this.refreshContent();
     }
@@ -234,7 +238,7 @@ export class NpmRegistryWebView {
         if (searchText) {
             initialSearchText = searchText;
             try {
-                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}&from=${this.searchResultsFrom}`);
+                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${this.searchSize}&from=${this.searchResultsFrom}`);
             } catch (err: any) {
                 error = err.response;
             }
@@ -311,7 +315,7 @@ export class NpmRegistryWebView {
             return '';
         }
 
-        const totalPages: number = Math.ceil(res.data.total / SEARCH_SIZE);
+        const totalPages: number = Math.ceil(res.data.total / this.searchSize);
         this.totalPages = totalPages;
 
         const content: string = Object.entries(res.data.objects).map((entry: any) => {
@@ -338,11 +342,16 @@ export class NpmRegistryWebView {
 
         return `
             <div id="search-content">
-                ${this.buildPagination(totalPages)}
-                <ul id="result-list">
-                    ${content}
-                </ul>
-                ${this.buildPagination(totalPages)}
+                ${content
+                    ? `${this.buildPagination(totalPages)}
+                    <ul id="result-list">
+                        ${content}
+                    </ul>
+                    ${this.buildPagination(totalPages)}`
+                    : `<div class="centered-message">
+                            <h1>No results found!</h1>
+                        </div>`
+                }
             </div>
         `;
     }

@@ -446,6 +446,7 @@ a:hover {
 
 .pagination a.active {
     background-color: rgba(100, 100, 100, 0.3);
+    border-radius: 3px;
 }
 
 .pagination a:hover:not(.active) {
@@ -490,4 +491,11 @@ a:hover {
 .disabled-link:hover {
     opacity: 0.5;
     cursor: default;
+}
+
+.centered-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }

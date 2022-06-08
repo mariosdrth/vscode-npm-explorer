@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.5.3]
+
+- Show keywords in package page
+- Add last publish date in package page
+- Add pagination in search page
+
 ## [2.4.3]
 
 - Show downloads in line graph
