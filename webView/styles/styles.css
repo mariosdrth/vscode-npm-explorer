@@ -248,11 +248,21 @@ a:hover {
 }
 
 #result-list {
-    margin-top: 2rem;
     list-style: none;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.result-list-item-details-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.result-list-item-details-date {
+    font-size: smaller;
+    margin-left: 0.8rem;
 }
 
 .result-list-item {
@@ -291,11 +301,6 @@ a:hover {
     background-color: rgba(100, 100, 100, 0.4);
 }
 
-#search-message-limit {
-    font-size: x-small;
-    margin-left: 0.6rem;
-}
-
 .result-list-item-version {
     font-size: smaller;
 }
@@ -323,7 +328,12 @@ a:hover {
     margin-right: 0.3rem;
 }
 
-#content-license {
+#content-updated {
+    margin-left: 15rem;
+}
+
+#content-package-details {
+    display: flex;
     margin-top: 2rem;
 }
 
@@ -337,7 +347,7 @@ a:hover {
     font-size: 1.2rem;
 }
 
-#no-author {
+#no-publisher {
     font-style: italic;
 }
 
@@ -394,4 +404,90 @@ a:hover {
 .weekly-downloads-icon {
     font-size: 1.3rem !important;
     margin-right: 0.5rem;
+}
+
+#keywords-header {
+    margin-top: 2rem;
+}
+
+.keyword-link {
+    margin-right: 1rem;
+    cursor: pointer;
+}
+
+#keywords-wrapper {
+    max-width: 40rem;
+}
+
+.avatar-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-img {
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-right: 0.5rem;
+}
+
+.pagination {
+    display: inline-block;
+    align-self: center;
+}
+
+.pagination a {
+    float: left;
+    padding: 11px 18px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.pagination a.active {
+    background-color: rgba(100, 100, 100, 0.3);
+}
+
+.pagination a:hover:not(.active) {
+    opacity: 0.5;
+}
+
+.pagination a:first-child {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    font-size: 1.5rem;
+    padding: 0 0.5rem 0 0;
+}
+
+.pagination a:last-child {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    font-size: 1.5rem;
+    padding: 0 0 0 0.5rem;
+}
+
+#search-content {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.inactive-link {
+    cursor: default;
+}
+
+.inactive-link:hover {
+    cursor: default;
+    opacity: 1 !important;
+}
+
+.disabled-link {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.disabled-link:hover {
+    opacity: 0.5;
+    cursor: default;
 }

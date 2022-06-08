@@ -289,10 +289,8 @@
 		"clean": "rimraf out",
 		"compile": "npm run clean && tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
 		"build": "npm run clean && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
-		"test": "node ./out/test/runTest.js",
 		"package": "vsce package"
 	},
 	"devDependencies": {

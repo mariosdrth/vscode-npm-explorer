@@ -11,7 +11,11 @@
     const weeklyDownloadsHeader = document.getElementById('weekly-downloads-week');
     const weeklyDownloads = document.getElementById('weekly-downloads');
     const wantedVersion = document.getElementById('content-info-wanted-version');
+    const pagePrevious = document.getElementsByClassName('page-previous');
+    const pageNext = document.getElementsByClassName('page-next');
     const searchResults = document.getElementsByClassName('result-list-item-btn');
+    const keywordLinks = document.getElementsByClassName('keyword-link');
+    const pageLinks = document.getElementsByClassName('page-link');
 
     let weeklyDownloadsInitialValue;
 
@@ -58,6 +62,30 @@
     searchResults && Array.from(searchResults).forEach(btn => {
         btn.addEventListener('click', () => {
             vscode.postMessage({command: 'searchResultSelected', packageName: btn.getElementsByClassName('result-list-item-header')[0].innerText});
+        });
+    });
+
+    keywordLinks && Array.from(keywordLinks).forEach(link => {
+        link.addEventListener('click', () => {
+            vscode.postMessage({command: 'keywordClicked', keyword: link.innerText});
+        });
+    });
+
+    pageLinks && Array.from(pageLinks).forEach(page => {
+        page.addEventListener('click', () => {
+            vscode.postMessage({command: 'pageClicked', page: page.innerText});
+        });
+    });
+
+    pagePrevious && Array.from(pagePrevious).forEach(page => {
+        page.addEventListener('click', () => {
+            vscode.postMessage({command: 'previousPageClicked'});
+        });
+    });
+
+    pageNext && Array.from(pageNext).forEach(page => {
+        page.addEventListener('click', () => {
+            vscode.postMessage({command: 'nextPageClicked'});
         });
     });
 

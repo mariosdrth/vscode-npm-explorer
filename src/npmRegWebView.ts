@@ -3,10 +3,11 @@ import axios from 'axios';
 import {marked} from 'marked';
 import {BaseItem, Dependency, NpmExplorerProvider} from './activityBarView';
 import {installDependency} from './taskCommands';
-import path = require('path');
+import * as path from 'path';
 
-const SEARCH_SIZE: number = 100;
+const SEARCH_SIZE: number = 20;
 type PackageDownloads = {downloads: number, day: string};
+type DateDiff = {days: number, months: number, years: number};
 
 export class NpmRegistryWebView {
 
@@ -16,6 +17,9 @@ export class NpmRegistryWebView {
     private dependency: Dependency | undefined;
     private searchText: string | undefined;
     private isDisposed: boolean;
+    private searchResultsFrom: number;
+    private activePage: number;
+    private totalPages: number;
     private weeklyDownloads: {start: string, end: string, downloads: number}[];
 
     constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
@@ -36,6 +40,9 @@ export class NpmRegistryWebView {
         this.searchText = searchText;
         this.isDisposed = false;
         this.weeklyDownloads = [];
+        this.searchResultsFrom = 0;
+        this.activePage = 1;
+        this.totalPages = 0;
 
         this.panel.onDidDispose(() => this.isDisposed = true);
 
@@ -53,6 +60,18 @@ export class NpmRegistryWebView {
                         return;
                     case 'search':
                         this.searchForPackages(message.searchtext);
+                        return;
+                    case 'keywordClicked':
+                        this.openSearchFromKeyword(message.keyword);
+                        return;
+                    case 'previousPageClicked':
+                        this.previousPageClicked();
+                        return;
+                    case 'nextPageClicked':
+                        this.nextPageClicked();
+                        return;
+                    case 'pageClicked':
+                        this.pageClicked(parseInt(message.page));
                         return;
                 }
             },
@@ -72,6 +91,31 @@ export class NpmRegistryWebView {
     }
 
     // Actions triggered from the view
+    private async nextPageClicked(): Promise<void> {
+        if (this.activePage === this.totalPages) {
+            return;
+        }
+        this.pageClicked(++this.activePage);
+    }
+
+    private async previousPageClicked(): Promise<void> {
+        if (this.activePage === 1) {
+            return;
+        }
+        this.pageClicked(--this.activePage);
+    }
+
+    private async pageClicked(page: number): Promise<void> {
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        this.activePage = page;
+        this.searchResultsFrom = (this.activePage - 1) * SEARCH_SIZE;
+        await this.refreshContent();
+    }
+
+    private openSearchFromKeyword(keyword: string): void {
+        new NpmRegistryWebView(this.npmExplorerProvider, this.context, undefined, `keywords:${keyword}`);
+    }
+
     private async searchForPackages(searchtext: string): Promise<void> {
         if (!searchtext) {
             return;
@@ -83,14 +127,14 @@ export class NpmRegistryWebView {
     }
 
     private async selectPackage(packageName: string): Promise<void> {
-        this.updateLoadingState(true);
+        await this.updateLoadingState(true);
         let installedDependency: Dependency | undefined = await this.getInstalledDependency(this.dependency, packageName);
 
         if (!installedDependency) {
             installedDependency = {name: packageName, isInstalled: false};
         }
         new NpmRegistryWebView(this.npmExplorerProvider, this.context, installedDependency, undefined);
-        this.updateLoadingState(false);
+        await this.updateLoadingState(false);
     }
 
     private async installVersion(version: string): Promise<void> {
@@ -154,17 +198,17 @@ export class NpmRegistryWebView {
         const xValues: string[] = [];
         const yValues: number[] = [];
         this.weeklyDownloads.map(item => {
-            xValues.push(`${item.start} - ${item.end}`);
+            xValues.push(`${item.start} to ${item.end}`);
             yValues.push(item.downloads);
         });
         await this.panel.webview.postMessage({command: 'buildGraph', xValues: xValues, yValues: yValues, initialDownloadValue: yValues[yValues.length - 1].toLocaleString('en-US')});
     }
 
-    private updateLoadingState(show: boolean): void {
+    private async updateLoadingState(show: boolean): Promise<void> {
         if (show) {
-            this.panel.webview.postMessage({command: 'showLoading'});
+            await this.panel.webview.postMessage({command: 'showLoading'});
         } else {
-            this.panel.webview.postMessage({command: 'hideLoading'});
+            await this.panel.webview.postMessage({command: 'hideLoading'});
         }
     }
 
@@ -173,7 +217,9 @@ export class NpmRegistryWebView {
             .then(async (value) => {
                 this.panel.webview.html = value;
                 await this.updateSelectClass();
-                await this.updateGraph();
+                if (this.dependency) {
+                    await this.updateGraph();
+                }
             })
             .catch(reason => this.panel.webview.html = reason);
     }
@@ -188,7 +234,7 @@ export class NpmRegistryWebView {
         if (searchText) {
             initialSearchText = searchText;
             try {
-                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}`);
+                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${SEARCH_SIZE}&from=${this.searchResultsFrom}`);
             } catch (err: any) {
                 error = err.response;
             }
@@ -265,10 +311,8 @@ export class NpmRegistryWebView {
             return '';
         }
 
-        let searchMessage: string = '';
-        if (res.data.total > SEARCH_SIZE) {
-            searchMessage = `First ${SEARCH_SIZE} resuls are shown`;
-        }
+        const totalPages: number = Math.ceil(res.data.total / SEARCH_SIZE);
+        this.totalPages = totalPages;
 
         const content: string = Object.entries(res.data.objects).map((entry: any) => {
             if (entry[1].package) {
@@ -280,7 +324,12 @@ export class NpmRegistryWebView {
                                 <p class="result-list-item-version">${this.cleanHtmlCode(entry[1].package.version)}</p>
                             </div>
                             <p>${this.cleanHtmlCode(entry[1].package.description)}</p>
-                            ${entry[1].package.author ? `<p>${this.cleanHtmlCode(entry[1].package.author.name)}</p>` : '<p id="no-author">No author provided</p>'}
+                            <div class="result-list-item-details-wrapper">
+                                ${entry[1].package.publisher
+                                    ? `<p>${this.cleanHtmlCode(entry[1].package.publisher.username)}</p>`
+                                    : '<p id="no-publisher">No publisher provided</p>'}
+                                <p class="result-list-item-details-date">${this.calcLastPublishDate(entry[1].package.date)}</p>
+                            </div>
                         </button>
                     </li>
                 `;
@@ -288,11 +337,46 @@ export class NpmRegistryWebView {
         }).join('');
 
         return `
-            ${searchMessage ? `<i id="search-message-limit">${searchMessage}</i>` : ''}
-            <ul id="result-list">
-                ${content}
-            </ul>
+            <div id="search-content">
+                ${this.buildPagination(totalPages)}
+                <ul id="result-list">
+                    ${content}
+                </ul>
+                ${this.buildPagination(totalPages)}
+            </div>
         `;
+    }
+
+    private buildPagination(last: number): string {
+        const pages: string[] = this.pages(last, 1);
+        const pagesEl: string = pages.map(page => {
+            if (page === '...') {
+                return '<a class="inactive-link">...</a>';
+            } else {
+                return parseInt(page) === this.activePage ? `<a class="active page-link">${page}</a>` : `<a class="page-link">${page}</a>`;
+            }
+        }).join('');
+        return `
+            <div class="pagination">
+                ${this.activePage === 1 ? `<a class="disabled-link page-previous">&laquo;</a>` : `<a class="page-previous">&laquo;</a>`}
+                ${pagesEl}
+                ${this.activePage === last ? `<a class="disabled-link page-next">&raquo;</a>` : `<a class="page-next">&raquo;</a>`}
+            </div>
+        `;
+    }
+
+    private pages(last: number, onSides: number = 3): string[] {
+        const pages: string[] = [];
+        for (let i: number = 1; i <= last; i++) {
+            let offset: number = (i === 1 || last) ? onSides + 1 : onSides;
+            if (i === 1 || (this.activePage - offset <= i && this.activePage + offset >= i) || 
+                i === this.activePage || i === last) {
+                pages.push(i.toString());
+            } else if (i === this.activePage - (offset + 1) || i === this.activePage + (offset + 1)) {
+                pages.push('...');
+            }
+        }
+        return pages;
     }
 
     private getPackageContent(dependency: Dependency, res: any, resDownloads: any): string {
@@ -307,13 +391,18 @@ export class NpmRegistryWebView {
                 .map((version: any) => {
                     return `${version.versionTag === latestVersionTag
                             ? `<option class="version-select-option" selected>` : `<option class="version-select-option">`}
-                                ${version.versionTag === latestVersionTag ? `${version.versionTag} (latest)` : version.versionTag}</option>`;
+                                ${version.versionTag === latestVersionTag ? `${version.versionTag} (latest)` : version.versionTag}</option>\n`;
                 })
                 .join('');
         let url: string = '';
         if (res.data.repository?.url) {
             // Sometimes repo urls start with git+ or git:// (npm registry...)
             url = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
+        }
+
+        let keywordsEl: string = '';
+        if (res.data.keywords) {
+            keywordsEl = res.data.keywords.map((keyword: string) => `<a class="keyword-link">${this.cleanHtmlCode(keyword)}</a>\n`).join('');
         }
 
         const lastYearDownloads: PackageDownloads[] = resDownloads.data.downloads;
@@ -357,6 +446,11 @@ export class NpmRegistryWebView {
                     author = res.data.author.name;
                 }
             }
+        }
+
+        let lastPublish: string = '';
+        if (res.data.time) {
+            lastPublish = this.calcLastPublishDate(res.data.time[versions[0].versionTag]);
         }
 
         return `
@@ -420,10 +514,16 @@ export class NpmRegistryWebView {
                             <a class="details-section-link" href="${this.cleanHtmlCode(res.data.homepage)}">${this.cleanHtmlCode(res.data.homepage)}</a>
                         </div>` : ''}
                     </div>
-                    ${res.data.license ? `<div id="content-license">
-                        <h3>License</h3>
-                        ${this.cleanHtmlCode(res.data.license)}
-                    </div>` : ''}
+                    <div id="content-package-details">
+                        <div id="content-license">
+                            <h3>License</h3>
+                            ${this.cleanHtmlCode(res.data.license) || 'No license found'}
+                        </div>
+                        <div id="content-updated">
+                            <h3>Last publish</h3>
+                            ${lastPublish || 'No data found'}
+                        </div>
+                    </div>
                     <div>
                         <h3 id="weekly-downloads-header">Downloads</h3>
                         <div id="weekly-downloads-section-wrapper">
@@ -433,6 +533,10 @@ export class NpmRegistryWebView {
                         </div>
                         <canvas id="weekly-downloads-plot"></canvas>
                     </div>
+                    ${keywordsEl ? `<div id="keywords-wrapper">
+                        <h3 id="keywords-header">Keywords</h3>
+                        ${keywordsEl}
+                    </div>` : ''}
                 </div>
                 ${readmeParsed
                     ? `<div id="content-md">${readmeParsed}</div>`
@@ -534,5 +638,75 @@ export class NpmRegistryWebView {
         }
 
         return `${day}-${month}-${year}`;
+    }
+
+    private calcLastPublishDate(lastPublish: string): string {
+        if (typeof(lastPublish) !== 'string') {
+            return '';
+        }
+        const dateDiff: DateDiff = this.calcDateDiff(lastPublish);
+
+        if (dateDiff.months < 1 && dateDiff.years < 1) {
+            if (dateDiff.days === 1) {
+                return 'a day ago';
+            }
+            return `${dateDiff.days} days ago`;
+        }
+
+        if (dateDiff.years < 1) {
+            let month: number = dateDiff.days < 16 ? dateDiff.months : dateDiff.months + 1;
+            if (month === 1) {
+                return 'a month ago';
+            }
+            return `${month} months ago`;
+        }
+
+        let year: number = dateDiff.months < 7 ? dateDiff.years : dateDiff.years + 1;
+        if (year === 1) {
+            return 'a year ago';
+        }
+        return `${year} years ago`;
+    }
+
+    private calcDateDiff(lastPublish: string): DateDiff {
+        let dateNow: Date = new Date(Date.now());
+        let lastPublishDate: Date = new Date(lastPublish);
+        let dateDiff: DateDiff = {days: 0, months: 0, years: 0};
+
+        if (dateNow === lastPublishDate) {
+            return dateDiff;
+        }
+
+        if (dateNow > lastPublishDate) {
+            const dateTemp: Date = lastPublishDate;
+            lastPublishDate = dateNow;
+            dateNow = dateTemp;
+        }
+
+        const year1: number = dateNow.getFullYear();
+        const year2: number = lastPublishDate.getFullYear();
+        const month1: number = dateNow.getMonth();
+        const month2: number = lastPublishDate.getMonth();
+        const day1: number = dateNow.getDate();
+        const day2: number = lastPublishDate.getDate();
+
+        dateDiff.years = year2 - year1;
+        dateDiff.months = month2 - month1;
+        dateDiff.days = day2 - day1;
+
+        if (dateDiff.days < 0) {
+            const dateTemp: Date = new Date(dateNow.getFullYear(), dateNow.getMonth() + 1, 1, 0, 0, -1);
+            const numDays: number = dateTemp.getDate();
+
+            dateDiff.months -= 1;
+            dateDiff.days += numDays;
+        }
+
+        if (dateDiff.months < 0) {
+            dateDiff.months += 12;
+            dateDiff.years -= 1;
+        }
+
+        return dateDiff;
     }
 }
