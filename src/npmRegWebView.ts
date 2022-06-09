@@ -284,7 +284,7 @@ export class NpmRegistryWebView {
                         </button>
                     </div>
                     ${searchText ? this.getSearchContent(res) : ''}
-                    ${dependency ? this.getPackageContent(dependency, res, resDownloads) : ''}
+                    ${dependency ? await this.getPackageContent(dependency, res, resDownloads) : ''}
                     <script nonce="${nonce}" src="${script}"></script>
                     <script nonce="${nonce}" src="${chartScript}"></script>
                 </body>
@@ -388,7 +388,7 @@ export class NpmRegistryWebView {
         return pages;
     }
 
-    private getPackageContent(dependency: Dependency, res: any, resDownloads: any): string {
+    private async getPackageContent(dependency: Dependency, res: any, resDownloads: any): Promise<string> {
         if (!res && !res.data) {
             return '';
         }
@@ -403,10 +403,10 @@ export class NpmRegistryWebView {
                                 ${version.versionTag === latestVersionTag ? `${version.versionTag} (latest)` : version.versionTag}</option>\n`;
                 })
                 .join('');
-        let url: string = '';
+        let repoUrl: string = '';
         if (res.data.repository?.url) {
-            // Sometimes repo urls start with git+ or git:// (npm registry...)
-            url = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
+            // Sometimes repo urls start with git+ or git://
+            repoUrl = `https${res.data.repository.url.match(/:\/\/.*/, 'gm')}`;
         }
 
         let keywordsEl: string = '';
@@ -433,9 +433,21 @@ export class NpmRegistryWebView {
         let readmeParsed: string = marked.parse(res.data.readme);
 
         if (!readmeParsed) {
-            // Sometimes the latest readme is not there (npm registry issue again), try and get it from the previous version
-            if (versions[1].details?.readme) {
+            // Sometimes the latest readme is not there (npm registry issue again), try and get it from one of the previous versions
+            if (versions[0].details?.readme) {
+                readmeParsed = marked.parse(versions[0].details.readme);
+            } else if (versions[1].details?.readme) {
                 readmeParsed = marked.parse(versions[1].details.readme);
+            }
+        }
+
+        if (!readmeParsed && repoUrl) {
+            // If readme still not found in npm registry try to get it from the github repo (only works for github)
+            const regexResult: RegExpExecArray | null = (/git@|https:\/\/[\w\.@]+(?:\/|:)([\w,\-,\_]+)\/([\w,\-,\_]+).git/gm).exec(repoUrl);
+            if (regexResult) {
+                const res: any = await axios.get(`https://api.github.com/repos/${regexResult[1]}/${regexResult[2]}/readme`);
+                const readmeContent: string = Buffer.from(res.data.content, res.data.encoding).toString();
+                readmeParsed = marked.parse(readmeContent);
             }
         }
 
@@ -508,12 +520,12 @@ export class NpmRegistryWebView {
                             </div>
                             <a class="details-section-link" href="${this.cleanHtmlCode(npmUrl)}">${this.cleanHtmlCode(npmUrl)}</a>
                         </div>
-                        ${url ? `<div class="details-section">
+                        ${repoUrl ? `<div class="details-section">
                             <div class="details-section-desc">
                                 <i class="details-section-icon codicon codicon-source-control"></i>
                                 <h3>Repository</h3>
                             </div>
-                            <a class="details-section-link" href="${this.cleanHtmlCode(url)}">${this.cleanHtmlCode(url)}</a>
+                            <a class="details-section-link" href="${this.cleanHtmlCode(repoUrl)}">${this.cleanHtmlCode(repoUrl)}</a>
                         </div>` : ''}
                         ${res.data.homepage ? `<div class="details-section">
                             <div class="details-section-desc">
