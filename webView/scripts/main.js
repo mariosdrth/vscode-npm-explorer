@@ -11,6 +11,10 @@
     const weeklyDownloadsHeader = document.getElementById('weekly-downloads-week');
     const weeklyDownloads = document.getElementById('weekly-downloads');
     const wantedVersion = document.getElementById('content-info-wanted-version');
+    const sortPackagesOptimal = document.getElementById('sort-packages-optimal-item');
+    const sortPackagesPopularity = document.getElementById('sort-packages-popularity-item');
+    const sortPackagesQuality = document.getElementById('sort-packages-quality-item');
+    const sortPackagesMaintenance = document.getElementById('sort-packages-maintenance-item');
     const pagePrevious = document.getElementsByClassName('page-previous');
     const pageNext = document.getElementsByClassName('page-next');
     const searchResults = document.getElementsByClassName('result-list-item-btn');
@@ -45,6 +49,21 @@
         vscode.postMessage({command: 'installVersionForNewPackage', version: versionSelectOption.value, isDev: true});
     });
 
+    sortPackagesOptimal && sortPackagesOptimal.addEventListener('click', () => {
+        vscode.postMessage({command: 'sortPackagesOptimal'});
+    });
+
+    sortPackagesPopularity && sortPackagesPopularity.addEventListener('click', () => {
+        vscode.postMessage({command: 'sortPackagesPopularity'});
+    });
+
+    sortPackagesQuality && sortPackagesQuality.addEventListener('click', () => {
+        vscode.postMessage({command: 'sortPackagesQuality'});
+    });
+
+    sortPackagesMaintenance && sortPackagesMaintenance.addEventListener('click', () => {
+        vscode.postMessage({command: 'sortPackagesMaintenance'});
+    });
 
     searchBtn && searchBtn.addEventListener('click', () => {
         if (!searchInput) {

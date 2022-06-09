@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.6.3]
+
+- Search github for readme as last resort
+- Add more details to the search results
+- Add sorting choice to the search results
+
 ## [2.5.3]
 
 - Show keywords in package page

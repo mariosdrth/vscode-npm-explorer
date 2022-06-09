@@ -8,6 +8,13 @@ import * as path from 'path';
 type PackageDownloads = {downloads: number, day: string};
 type DateDiff = {days: number, months: number, years: number};
 
+enum SearchType {
+    Optimal = 'Optimal',
+    Popularity = 'Popularity',
+    Quality = 'Quality',
+    Maintenance = 'Maintenance'
+}
+
 export class NpmRegistryWebView {
 
     private panel: WebviewPanel;
@@ -21,6 +28,7 @@ export class NpmRegistryWebView {
     private totalPages: number;
     private searchSize: number;
     private weeklyDownloads: {start: string, end: string, downloads: number}[];
+    private searchType: string;
 
     constructor(npmExplorerProvider: NpmExplorerProvider, context: ExtensionContext, dependency?: Dependency, searchText?: string) {
         this.panel = window.createWebviewPanel(
@@ -44,6 +52,7 @@ export class NpmRegistryWebView {
         this.activePage = 1;
         this.totalPages = 0;
         this.searchSize = 20;
+        this.searchType = SearchType.Optimal;
 
         this.panel.onDidDispose(() => this.isDisposed = true);
 
@@ -74,6 +83,18 @@ export class NpmRegistryWebView {
                     case 'pageClicked':
                         this.pageClicked(parseInt(message.page));
                         return;
+                    case 'sortPackagesOptimal':
+                        this.sortResults(SearchType.Optimal);
+                        return;
+                    case 'sortPackagesPopularity':
+                        this.sortResults(SearchType.Popularity);
+                        return;
+                    case 'sortPackagesQuality':
+                        this.sortResults(SearchType.Quality);
+                        return;
+                    case 'sortPackagesMaintenance':
+                        this.sortResults(SearchType.Maintenance);
+                        return;
                 }
             },
             undefined,
@@ -92,6 +113,15 @@ export class NpmRegistryWebView {
     }
 
     // Actions triggered from the view
+    private async sortResults(searchType: SearchType): Promise<void> {
+        if (searchType === this.searchType) {
+            return;
+        }
+        this.panel.webview.html = this.getLoadingSpinner(this.panel.webview, this.context);
+        this.searchType = searchType;
+        await this.refreshContent();
+    }
+
     private async nextPageClicked(): Promise<void> {
         if (this.activePage === this.totalPages) {
             return;
@@ -127,6 +157,7 @@ export class NpmRegistryWebView {
         this.searchResultsFrom = 0;
         this.searchSize = 20;
         this.searchText = searchtext;
+        this.searchType = SearchType.Optimal;
         await this.refreshContent();
     }
 
@@ -238,7 +269,7 @@ export class NpmRegistryWebView {
         if (searchText) {
             initialSearchText = searchText;
             try {
-                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${this.searchSize}&from=${this.searchResultsFrom}`);
+                res = await axios.get(`https://registry.npmjs.org/-/v1/search?text=${searchText}&size=${this.searchSize}&from=${this.searchResultsFrom}${this.getSortingForSearch()}`);
             } catch (err: any) {
                 error = err.response;
             }
@@ -278,7 +309,7 @@ export class NpmRegistryWebView {
                         </div>
                     </div>
                     <div id="search-wrapper">
-                        <input value="${initialSearchText}" id="search" type="text" id="package" placeholder="Search Package...">
+                        <input value="${initialSearchText}" id="search" type="text" id="package" placeholder="Search Packages...">
                         <button id="search-btn">
                             <i id="search-btn-icon" class="codicon codicon-search"></i>
                         </button>
@@ -325,14 +356,31 @@ export class NpmRegistryWebView {
                         <button class="result-list-item-btn">
                             <div class="result-list-item-header-wrapper">
                                 <h3 class="result-list-item-header">${this.cleanHtmlCode(entry[1].package.name)}</h3>
-                                <p class="result-list-item-version">${this.cleanHtmlCode(entry[1].package.version)}</p>
+                                <div class="result-list-item-version-wrapper">
+                                    <p class="result-list-item-version">${this.cleanHtmlCode(entry[1].package.version)}</p>
+                                    ${entry[1].package.name === this.searchText ? '<p class="result-list-item-match-label">exact match</p>' : ''}
+                                </div>
                             </div>
-                            <p>${this.cleanHtmlCode(entry[1].package.description)}</p>
+                            <p class="result-list-item-details-description">${this.cleanHtmlCode(entry[1].package.description)}</p>
                             <div class="result-list-item-details-wrapper">
                                 ${entry[1].package.publisher
                                     ? `<p>${this.cleanHtmlCode(entry[1].package.publisher.username)}</p>`
                                     : '<p id="no-publisher">No publisher provided</p>'}
                                 <p class="result-list-item-details-date">${this.calcLastPublishDate(entry[1].package.date)}</p>
+                            </div>
+                            <div id="package-stats-wrapper">
+                                <li class="package-stats-item">
+                                    <p class="package-stats-title">p</p>
+                                    <div class="package-stats-item-bar" style="background-color: #29abe2; transform: scaleX(${entry[1].score.detail.popularity});"></div>
+                                </li>
+                                <li class="package-stats-item">
+                                    <p class="package-stats-title">q</p>
+                                    <div class="package-stats-item-bar" style="background-color: #8956ff; transform: scaleX(${entry[1].score.detail.quality});"></div>
+                                </li>
+                                <li class="package-stats-item">
+                                    <p class="package-stats-title">m</p>
+                                    <div class="package-stats-item-bar" style="background-color: #cb3837; transform: scaleX(${entry[1].score.detail.maintenance});"></div>
+                                </li>
                             </div>
                         </button>
                     </li>
@@ -340,14 +388,30 @@ export class NpmRegistryWebView {
             }
         }).join('');
 
+        const sortPackagesEl: string = `
+            <div id="sort-packages-wrapper">
+                <h2 id="sort-packages-header">Sort Packages</h2>
+                    <ul id="sort-packages-list">
+                        <li id="sort-packages-optimal-item" class="sort-list-item"><div class="sort-list-item-text">Optimal</div></li>
+                        <li id="sort-packages-popularity-item" class="sort-list-item"><div class="sort-list-item-text">Popularity</div></li>
+                        <li id="sort-packages-quality-item" class="sort-list-item"><div class="sort-list-item-text">Quality</div></li>
+                        <li id="sort-packages-maintenance-item" class="sort-list-item"><div class="sort-list-item-text">Maintenance</div></li>
+                    </ul>
+                </div>
+            `;
+
         return `
             <div id="search-content">
                 ${content
-                    ? `${this.buildPagination(totalPages)}
-                    <ul id="result-list">
-                        ${content}
-                    </ul>
-                    ${this.buildPagination(totalPages)}`
+                    ? `
+                        <div id="total-results">${res.data.total} packages found</div>
+                        ${this.buildPagination(totalPages)}
+                        <div>
+                            ${sortPackagesEl}
+                            <ul id="result-list">${content}</ul>
+                        </div>
+                        ${this.buildPagination(totalPages)}
+                    `
                     : `<div class="centered-message">
                             <h1>No results found!</h1>
                         </div>`
@@ -446,8 +510,10 @@ export class NpmRegistryWebView {
             const regexResult: RegExpExecArray | null = (/git@|https:\/\/[\w\.@]+(?:\/|:)([\w,\-,\_]+)\/([\w,\-,\_]+).git/gm).exec(repoUrl);
             if (regexResult) {
                 const res: any = await axios.get(`https://api.github.com/repos/${regexResult[1]}/${regexResult[2]}/readme`);
-                const readmeContent: string = Buffer.from(res.data.content, res.data.encoding).toString();
-                readmeParsed = marked.parse(readmeContent);
+                if (res && res.data) {
+                    const readmeContent: string = Buffer.from(res.data.content, res.data.encoding).toString();
+                    readmeParsed = marked.parse(readmeContent);
+                }
             }
         }
 
@@ -729,5 +795,18 @@ export class NpmRegistryWebView {
         }
 
         return dateDiff;
+    }
+
+    private getSortingForSearch(): string {
+        if (this.searchType === SearchType.Popularity) {
+            return '&quality=0.0&maintenance=0.0&popularity=1.0';
+        }
+        if (this.searchType === SearchType.Quality) {
+            return '&quality=1.0&maintenance=0.0&popularity=0.0';
+        }
+        if (this.searchType === SearchType.Maintenance) {
+            return '&quality=0.0&maintenance=1.0&popularity=0.0';
+        }
+        return '';
     }
 }
