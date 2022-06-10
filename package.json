@@ -195,6 +195,40 @@
 			]
 		},
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "npmExplorer.runTask",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.editTask",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.editDependency",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.deleteDependency",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.deleteTask",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.updateDependency",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.uninstallDependency",
+					"when": "false"
+				},
+				{
+					"command": "npmExplorer.openNpmRegistryWithDependency",
+					"when": "false"
+				}
+			],
 			"view/title": [
 				{
 					"command": "npmExplorer.openNpmRegistry",
