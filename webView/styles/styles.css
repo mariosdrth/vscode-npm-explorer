@@ -538,13 +538,13 @@ a:hover {
 }
 
 #sort-packages-header {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 
 #sort-packages-list {
     list-style-type: none;
     padding: 0;
-    font-size: 1.2rem;
+    font-size: 1rem;
 }
 
 .sort-list-item {
@@ -554,11 +554,12 @@ a:hover {
 }
 
 .sort-list-item-text {
-    transition: transform 0.1s ease-in;
+    transition: transform 0.1s ease-in, filter 0.1s ease-in;
 }
 
 .sort-list-item:hover .sort-list-item-text {
     transform: scale(1.05) translateY(-0.1rem);
+    filter: contrast(1.5);
 }
 
 #sort-packages-optimal-item {

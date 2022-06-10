@@ -123,7 +123,7 @@
 			},
 			{
 				"command": "npmExplorer.openNpmRegistryWithDependency",
-				"title": "Open Npm Registry",
+				"title": "Open Npm Registry with Dependency",
 				"icon": {
 					"light": "images/light/npm_browser.svg",
 					"dark": "images/dark/npm_browser.svg"
