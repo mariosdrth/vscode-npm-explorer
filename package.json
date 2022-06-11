@@ -2,7 +2,7 @@
 	"name": "vscode-npm-explorer",
 	"displayName": "Npm Explorer",
 	"description": "Explorer view that shows npm tasks and dependencies and allows running/updating/uninstalling/editing them",
-	"version": "2.6.3",
+	"version": "2.6.4",
 	"engines": {
 		"vscode": "^1.67.0"
 	},

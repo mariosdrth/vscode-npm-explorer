@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.6.4]
+
+- Remove commands that don't make sense from command palette
+
 ## [2.6.3]
 
 - Search github for readme as last resort
