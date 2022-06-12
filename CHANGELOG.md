@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.7.4]
+
+- Add extra command to pass search term before opening the view
+- Make sure the extension loads even if the view is not opened first
+- Fix view bug where the gutters where shown in irrelevant file
+
 ## [2.6.4]
 
 - Remove commands that don't make sense from command palette

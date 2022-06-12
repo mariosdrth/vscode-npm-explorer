@@ -9,5 +9,6 @@
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true
-	}
+	},
+	"exclude": [".vscode-test", "test-resources"]
 }

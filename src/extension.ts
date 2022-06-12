@@ -5,6 +5,7 @@ import {editDependency, editTask} from './editEntryCommands';
 import {NpmRegistryWebView} from './npmRegWebView';
 import {selectPath} from './selectPathCommand';
 import {checkOutdated, npmInstall, runTask, uninstallDependency, updateAll, updateDependency} from './taskCommands';
+import {searchNpmRegistry} from './searchNpmRegistryCommand';
 
 export function activate(context: ExtensionContext): void {
 	const npmExplorerProvider: NpmExplorerProvider = new NpmExplorerProvider();
@@ -12,6 +13,7 @@ export function activate(context: ExtensionContext): void {
 		window.registerTreeDataProvider('npmExplorer', npmExplorerProvider),
 		commands.registerCommand('npmExplorer.refresh', () => npmExplorerProvider.refresh()),
 		commands.registerCommand('npmExplorer.openNpmRegistry', () => new NpmRegistryWebView(npmExplorerProvider, context, undefined)),
+		commands.registerCommand('npmExplorer.searchNpmRegistry', () => searchNpmRegistry(npmExplorerProvider, context)),
 		commands.registerCommand('npmExplorer.updateAll', () => updateAll(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.npmInstall', () => npmInstall(npmExplorerProvider)),
 		commands.registerCommand('npmExplorer.checkOutdated', () => checkOutdated(npmExplorerProvider)),
@@ -26,6 +28,6 @@ export function activate(context: ExtensionContext): void {
 		commands.registerCommand('npmExplorer.deleteTask', (task: NpmTask) => deleteTask(task)),
 		workspace.onDidSaveTextDocument((document) => document.fileName.includes('package.json') && npmExplorerProvider.refresh()),
 		workspace.onDidOpenTextDocument(() => markPackages()),
-		window.onDidChangeActiveTextEditor((textEditor: TextEditor | undefined) => textEditor && textEditor.document.fileName.includes('package.json') && markPackages(textEditor))
+		window.onDidChangeActiveTextEditor((textEditor: TextEditor | undefined) => markPackages(textEditor))
 	);
 }

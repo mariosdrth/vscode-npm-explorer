@@ -98,7 +98,11 @@ export const markPackages: (textEditor?: TextEditor) => Promise<void> = async (t
         return;
     }
     const document: TextDocument | undefined = textEditor ? textEditor.document : window.activeTextEditor?.document;
-    if (!document || !document.fileName.includes('package.json')) {
+    if (!document) {
+        return;
+    }
+    if (!document.fileName.includes('package.json')) {
+        window.activeTextEditor?.setDecorations(tabDecorationType, []);
         return;
     }
     const outdatedDependencies: OutdatedDependency[] = await getOutdatedDependencies();
