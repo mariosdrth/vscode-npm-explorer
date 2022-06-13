@@ -1,0 +1,12 @@
+{
+	"scripts": {
+		"print": "echo THIS IS A TEST"
+	},
+	"devDependencies": {
+		"mocha": "^9.2.0",
+		"@types/chai": "^4.3.1"
+	},
+	"dependencies": {
+        "eslint": "^8.14.0"
+	}
+}

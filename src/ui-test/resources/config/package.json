@@ -1,0 +1,8 @@
+{
+	"scripts": {
+		"print-two": "echo THIS IS A TEST"
+	},
+	"devDependencies": {
+		"mocha": "^9.2.0"
+	}
+}

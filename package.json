@@ -331,7 +331,7 @@
 		"lint": "eslint src --ext ts",
 		"build": "npm run clean && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
 		"package": "vsce package",
-		"pre-test": "copyfiles -f ./src/ui-tests/* out",
+		"pre-test": "copyfiles -f ./src/ui-test/resources/* out/ui-test/resources && copyfiles -f ./src/ui-test/resources/config/* out/ui-test/resources/config",
 		"ui-tests-run": "extest run-tests out/ui-test/*.js",
 		"ui-tests-build": "npm run compile && npm run pre-test",
 		"ui-tests-setup": "extest setup-tests",

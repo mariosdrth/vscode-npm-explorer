@@ -9,7 +9,7 @@ export const selectPath: (npmExplorerProvider: NpmExplorerProvider) => Promise<v
     const relativePath: string = workspace.getConfiguration('npmExplorer').get<string>('relativePath', '');
     const allPackageJsonFiles: Uri[] = await workspace.findFiles('**/package.json', '**/{.vscode-test,.vscode,node_modules}/**');
     const quickPicks: string[] = allPackageJsonFiles.map(uri => {
-        return uri.path.replace(`${workspaceFolder.uri.path}/`, '');
+        return uri.path.toLocaleLowerCase().replace(`${workspaceFolder.uri.path.toLocaleLowerCase()}/`, '');
     });
 
     let selectedItem: string | undefined;
