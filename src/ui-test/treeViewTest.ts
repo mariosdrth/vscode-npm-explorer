@@ -94,9 +94,7 @@ describe('Npm Explorer View Tests', () => {
 
         await bottomBar.toggle(false);
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
-        // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check "check dependencies" action works', async () => {
@@ -117,7 +115,7 @@ describe('Npm Explorer View Tests', () => {
 
         await bottomBar.toggle(false);
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check update all dependencies action works', async () => {
@@ -144,7 +142,7 @@ describe('Npm Explorer View Tests', () => {
 
         await bottomBar.toggle(false);
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check update all dependencies action is aborted on "No"', async () => {
@@ -168,7 +166,7 @@ describe('Npm Explorer View Tests', () => {
 
         expect(await bottomBar.isDisplayed()).to.be.false;
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check run task action works', async () => {
@@ -189,8 +187,6 @@ describe('Npm Explorer View Tests', () => {
         expect(await bottomBar.getText()).to.has.string('print - Task');
 
         await bottomBar.toggle(false);
-        // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
     });
 
     it('Check update dependency action works', async () => {
@@ -213,7 +209,7 @@ describe('Npm Explorer View Tests', () => {
         await bottomBar.toggle(false);
 
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check uninstall dependency action works', async () => {
@@ -228,13 +224,13 @@ describe('Npm Explorer View Tests', () => {
         const eslintDependency: ViewItem  | undefined = await npmExplorerSection.findItem('eslint');
         await eslintDependency?.click();
         await eslintDependency?.findElement(By.css('[title="Uninstall"]'))?.click();
-        await new Promise(res => setTimeout(res, 5000));
+        await new Promise(res => setTimeout(res, 3000));
 
         expect(await bottomBar.isDisplayed()).to.be.true;
         expect(await bottomBar.getText()).to.has.string('npm uninstall eslint - Task');
 
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 8000));
+        await new Promise(res => setTimeout(res, 6000));
 
         // Focus the view so actions are interactable
         await npmExplorerSection.click();
@@ -275,7 +271,7 @@ describe('Npm Explorer View Tests', () => {
         const promptNew: InputBox = new InputBox();
         await promptNew.confirm();
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check open npm registry action works', async () => {
