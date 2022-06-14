@@ -1,13 +1,27 @@
 name: Release
 on:
-  push:
-    tags:
-      - "*"
+  release:
+    types:
+      - published
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  test:
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-node@v1
+          with:
+            node-version: 16
 
+        - name: Install all dependencies
+          run: npm i --save-dev
+
+        - name: Run Tests
+          run: npm run ui-tests
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
