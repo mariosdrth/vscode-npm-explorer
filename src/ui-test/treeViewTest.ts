@@ -228,13 +228,13 @@ describe('Npm Explorer View Tests', () => {
         const eslintDependency: ViewItem  | undefined = await npmExplorerSection.findItem('eslint');
         await eslintDependency?.click();
         await eslintDependency?.findElement(By.css('[title="Uninstall"]'))?.click();
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 5000));
 
         expect(await bottomBar.isDisplayed()).to.be.true;
         expect(await bottomBar.getText()).to.has.string('npm uninstall eslint - Task');
 
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 6000));
+        await new Promise(res => setTimeout(res, 8000));
 
         // Focus the view so actions are interactable
         await npmExplorerSection.click();
