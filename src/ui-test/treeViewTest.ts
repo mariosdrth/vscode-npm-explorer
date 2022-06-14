@@ -187,6 +187,8 @@ describe('Npm Explorer View Tests', () => {
         expect(await bottomBar.getText()).to.has.string('print - Task');
 
         await bottomBar.toggle(false);
+        // Wait for content to load
+        await new Promise(res => setTimeout(res, 5000));
     });
 
     it('Check update dependency action works', async () => {

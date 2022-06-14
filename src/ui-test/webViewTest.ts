@@ -188,6 +188,7 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
 
     it('Check the dependency page loads as expected', async () => {
         await npmExplorerSection.click();
+        await new Promise(res => setTimeout(res, 500));
         let mochaVersion: WebElement | undefined = await mochaDependency?.findElement(By.className('label-description'));
         expect(await mochaVersion?.getText()).to.is.string('Current version: ^9.2.0');
 
@@ -233,8 +234,10 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
         await view.switchBack();
 
         await npmExplorerSection.click();
+        await new Promise(res => setTimeout(res, 500));
         mochaDependency = await npmExplorerSection.findItem('mocha');
         await mochaDependency?.click();
+        await new Promise(res => setTimeout(res, 500));
         mochaVersion = await mochaDependency?.findElement(By.className('label-description'));
         expect(await mochaVersion?.getText()).to.not.has.string('9.2.0');
         expect(await mochaVersion?.getText()).to.has.string(versionToInstall);
