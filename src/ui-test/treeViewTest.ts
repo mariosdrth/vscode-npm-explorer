@@ -589,7 +589,8 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Edit"]'))?.click();
-        await waitForEditor();
+        await waitForTreeProgress(npmExplorerSection, 1000);
+        await waitForEditor(1000);
 
         const editor: TextEditor = new TextEditor();
         
@@ -606,8 +607,8 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Delete"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 500);
-        await waitForEditor();
+        await waitForTreeProgress(npmExplorerSection, 1000);
+        await waitForEditor(1000);
 
         const editor: TextEditor = new TextEditor();
         
