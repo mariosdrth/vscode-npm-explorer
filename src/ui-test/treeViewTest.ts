@@ -548,14 +548,12 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Edit"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 2000);
+        await waitForTreeProgress(npmExplorerSection);
         await waitForEditor();
 
         const editor: TextEditor = new TextEditor();
-        await new Promise(res => setTimeout(res, 1000));
         
         expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getSelection()).to.exist;
     });
 
     it('Check delete dependency action works', async () => {
@@ -567,14 +565,12 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Delete"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 2000);
+        await waitForTreeProgress(npmExplorerSection);
         await waitForEditor();
 
         const editor: TextEditor = new TextEditor();
-        await new Promise(res => setTimeout(res, 1000));
         
         expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getText(), await editor.getText()).to.not.have.string('rimraf');
     });
 
     it('Check select package action works', async () => {
