@@ -156,11 +156,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        const text: string = await bottomBar.getText();
-        console.log('--------------------------------');
-        console.log('TERMINAL TEXT: ' + text);
-        console.log('--------------------------------');
-        expect(text).to.have.string('npm install - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm install <',
@@ -183,7 +178,6 @@ describe('Npm Explorer View Tests', () => {
         const npmInstallAction: ViewPanelAction | undefined = await npmExplorerSection.getAction('Npm Install');
         await npmInstallAction?.click();
         await waitForTerminalProgress(bottomBar);
-        expect(await bottomBar.getText()).to.have.string('npm install --save-dev - Task');
 
         expect(await bottomBar.isDisplayed()).to.be.true;
 
@@ -208,11 +202,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        const text: string = await bottomBar.getText();
-        console.log('--------------------------------');
-        console.log('TERMINAL TEXT: ' + text);
-        console.log('--------------------------------');
-        expect(await bottomBar.getText()).to.have.string('npm outdated - Task');
 
         await assertTerminalContent({
             expected: /> Executing task: npm outdated <.*Package.*Current.*Wanted.*Latest.*Location.*Depended by/gmsi,
@@ -241,11 +230,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        const text: string = await bottomBar.getText();
-        console.log('--------------------------------');
-        console.log('TERMINAL TEXT: ' + text);
-        console.log('--------------------------------');
-        expect(await bottomBar.getText()).to.have.string('npm update - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm update <',
@@ -289,11 +273,9 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar, 3000);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('print - Task');
+
         const text: string = await bottomBar.getText();
-        console.log('--------------------------------');
-        console.log('TERMINAL TEXT: ' + text);
-        console.log('--------------------------------');
+        expect(text).to.have.string('print - Task');
 
         await bottomBar.toggle(false);
         await waitForTreeProgress(npmExplorerSection);
@@ -314,7 +296,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTreeProgress(npmExplorerSection);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm update eslint - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm update eslint <',
@@ -341,7 +322,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTreeProgress(npmExplorerSection);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm update --save eslint - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm update --save eslint <',
@@ -366,7 +346,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTreeProgress(npmExplorerSection);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm update --save-dev glob - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm update --save-dev glob <',
@@ -393,7 +372,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTreeProgress(npmExplorerSection);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm update --save glob - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm update --save glob <',
@@ -417,7 +395,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm uninstall eslint - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm uninstall eslint <',
@@ -449,7 +426,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm uninstall --save lodash - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm uninstall --save lodash <',
@@ -479,7 +455,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm uninstall --save-dev glob - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm uninstall --save-dev glob <',
@@ -511,7 +486,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm uninstall --save chai - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm uninstall --save chai <',
@@ -526,6 +500,43 @@ describe('Npm Explorer View Tests', () => {
         expect(chaiDependencyNew).to.be.undefined;
 
         await bottomBar.toggle(false);
+    });
+
+    it('Check edit task action works', async () => {
+        expect(await npmExplorerSection.isExpanded()).to.be.true;
+        await new Workbench().getEditorView().closeAllEditors();
+        // Focus the view so actions are interactable
+        await npmExplorerSection.click();
+        
+        const printTask: ViewItem  | undefined = await npmExplorerSection.findItem('print');
+        await printTask?.click();
+        await printTask?.findElement(By.css('[title="Edit"]'))?.click();
+        await waitForEditor();
+
+        const editor: TextEditor = new TextEditor();
+        await new Promise(res => setTimeout(res, 500));
+        
+        expect(await editor.getTitle()).to.be.string('package.json');
+        expect(await editor.getSelection()).to.exist;
+    });
+
+    it('Check delete task action works', async () => {
+        expect(await npmExplorerSection.isExpanded()).to.be.true;
+        await new Workbench().getEditorView().closeAllEditors();
+        // Focus the view so actions are interactable
+        await npmExplorerSection.click();
+        
+        const printTask: ViewItem  | undefined = await npmExplorerSection.findItem('print');
+        await printTask?.click();
+        await printTask?.findElement(By.css('[title="Delete"]'))?.click();
+        await waitForTreeProgress(npmExplorerSection, 500);
+        await waitForEditor();
+
+        const editor: TextEditor = new TextEditor();
+        await new Promise(res => setTimeout(res, 500));
+        
+        expect(await editor.getTitle()).to.be.string('package.json');
+        expect(await editor.getText()).to.not.have.string('print');
     });
 
     it('Check select package action works', async () => {
@@ -561,41 +572,6 @@ describe('Npm Explorer View Tests', () => {
         await waitForTreeProgress(npmExplorerSection, 1000);
     });
 
-    it('Check edit task action works', async () => {
-        expect(await npmExplorerSection.isExpanded()).to.be.true;
-        await new Workbench().getEditorView().closeAllEditors();
-        // Focus the view so actions are interactable
-        await npmExplorerSection.click();
-        
-        const printTask: ViewItem  | undefined = await npmExplorerSection.findItem('print');
-        await printTask?.click();
-        await printTask?.findElement(By.css('[title="Edit"]'))?.click();
-        await waitForEditor();
-
-        const editor: TextEditor = new TextEditor();
-        
-        expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getSelection()).to.exist;
-    });
-
-    it('Check delete task action works', async () => {
-        expect(await npmExplorerSection.isExpanded()).to.be.true;
-        await new Workbench().getEditorView().closeAllEditors();
-        // Focus the view so actions are interactable
-        await npmExplorerSection.click();
-        
-        const printTask: ViewItem  | undefined = await npmExplorerSection.findItem('print');
-        await printTask?.click();
-        await printTask?.findElement(By.css('[title="Delete"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 500);
-        await waitForEditor();
-
-        const editor: TextEditor = new TextEditor();
-        
-        expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getText()).to.not.have.string('print');
-    });
-
     it('Check edit dependency action works', async () => {
         expect(await npmExplorerSection.isExpanded()).to.be.true;
         await new Workbench().getEditorView().closeAllEditors();
@@ -605,8 +581,7 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Edit"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 1000);
-        await waitForEditor(1000);
+        await waitForEditor();
 
         const editor: TextEditor = new TextEditor();
         
@@ -623,8 +598,8 @@ describe('Npm Explorer View Tests', () => {
         const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
         await dependency?.click();
         await dependency?.findElement(By.css('[title="Delete"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 1000);
-        await waitForEditor(1000);
+        await waitForTreeProgress(npmExplorerSection, 500);
+        await waitForEditor();
 
         const editor: TextEditor = new TextEditor();
         
