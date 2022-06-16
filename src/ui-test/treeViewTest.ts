@@ -539,6 +539,43 @@ describe('Npm Explorer View Tests', () => {
         expect(await editor.getText()).to.not.have.string('print');
     });
 
+    it('Check edit dependency action works', async () => {
+        expect(await npmExplorerSection.isExpanded()).to.be.true;
+        await new Workbench().getEditorView().closeAllEditors();
+        // Focus the view so actions are interactable
+        await npmExplorerSection.click();
+        
+        const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
+        await dependency?.click();
+        await dependency?.findElement(By.css('[title="Edit"]'))?.click();
+        await waitForEditor();
+
+        const editor: TextEditor = new TextEditor();
+        await new Promise(res => setTimeout(res, 1000));
+        
+        expect(await editor.getTitle()).to.be.string('package.json');
+        expect(await editor.getSelection()).to.exist;
+    });
+
+    it('Check delete dependency action works', async () => {
+        expect(await npmExplorerSection.isExpanded()).to.be.true;
+        await new Workbench().getEditorView().closeAllEditors();
+        // Focus the view so actions are interactable
+        await npmExplorerSection.click();
+        
+        const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
+        await dependency?.click();
+        await dependency?.findElement(By.css('[title="Delete"]'))?.click();
+        await waitForTreeProgress(npmExplorerSection, 500);
+        await waitForEditor();
+
+        const editor: TextEditor = new TextEditor();
+        await new Promise(res => setTimeout(res, 1000));
+        
+        expect(await editor.getTitle()).to.be.string('package.json');
+        expect(await editor.getText(), await editor.getText()).to.not.have.string('rimraf');
+    });
+
     it('Check select package action works', async () => {
         expect(await npmExplorerSection.isExpanded()).to.be.true;
         // Focus the view so actions are interactable
@@ -570,41 +607,6 @@ describe('Npm Explorer View Tests', () => {
         await promptNew.confirm();
         
         await waitForTreeProgress(npmExplorerSection, 1000);
-    });
-
-    it('Check edit dependency action works', async () => {
-        expect(await npmExplorerSection.isExpanded()).to.be.true;
-        await new Workbench().getEditorView().closeAllEditors();
-        // Focus the view so actions are interactable
-        await npmExplorerSection.click();
-        
-        const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
-        await dependency?.click();
-        await dependency?.findElement(By.css('[title="Edit"]'))?.click();
-        await waitForEditor();
-
-        const editor: TextEditor = new TextEditor();
-        
-        expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getSelection()).to.exist;
-    });
-
-    it('Check delete dependency action works', async () => {
-        expect(await npmExplorerSection.isExpanded()).to.be.true;
-        await new Workbench().getEditorView().closeAllEditors();
-        // Focus the view so actions are interactable
-        await npmExplorerSection.click();
-        
-        const dependency: ViewItem  | undefined = await npmExplorerSection.findItem('rimraf');
-        await dependency?.click();
-        await dependency?.findElement(By.css('[title="Delete"]'))?.click();
-        await waitForTreeProgress(npmExplorerSection, 500);
-        await waitForEditor();
-
-        const editor: TextEditor = new TextEditor();
-        
-        expect(await editor.getTitle()).to.be.string('package.json');
-        expect(await editor.getText()).to.not.have.string('rimraf');
     });
 
     it('Check open npm registry action works', async () => {
