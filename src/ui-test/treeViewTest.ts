@@ -574,6 +574,8 @@ describe('Npm Explorer View Tests', () => {
     });
 
     it('Check select package action works', async () => {
+        await new Workbench().getEditorView().closeAllEditors();
+        await new Promise(res => setTimeout(res, 1000));
         expect(await npmExplorerSection.isExpanded()).to.be.true;
         // Focus the view so actions are interactable
         await npmExplorerSection.click();
