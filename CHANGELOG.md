@@ -1,5 +1,9 @@
 # Change Log
 
+## [2.7.5]
+
+- Fix non-working mispelled settings
+
 ## [2.7.4]
 
 - Add extra command to pass search term before opening the view
