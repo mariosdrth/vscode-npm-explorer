@@ -141,6 +141,7 @@ describe('Npm Explorer View Tests', () => {
         expect(momentDependencyNew).to.exist;
 
         await terminal.killTerminal();
+        await new Promise(res => setTimeout(res, 1000));
     });
 
     it('Check npm install action works', async () => {
