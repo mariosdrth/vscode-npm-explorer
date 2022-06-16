@@ -156,7 +156,11 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
-        expect(await bottomBar.getText()).to.have.string('npm install - Task');
+        const text: string = await bottomBar.getText();
+        console.log('--------------------------------');
+        console.log('TERMINAL TEXT: ' + text);
+        console.log('--------------------------------');
+        expect(text).to.have.string('npm install - Task');
 
         await assertTerminalContent({
             expected: '> Executing task: npm install <',
