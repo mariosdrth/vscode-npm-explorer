@@ -1,6 +1,7 @@
-import {Workbench, EditorView, WebView, By, WebElement, InputBox, VSBrowser, ActivityBar, SideBarView, CustomTreeSection, ViewItem} from 'vscode-extension-tester';
+import {EditorView, WebView, By, WebElement, VSBrowser, ActivityBar, SideBarView, CustomTreeSection, ViewItem, InputBox, Workbench} from 'vscode-extension-tester';
 import {expect} from 'chai';
 import * as path from 'path';
+import {waitForTreeProgress, waitForWebview} from './testUtils';
 
 const webViewTitle: string = 'Npm Registry';
 const npmExplorerTitle: string = 'Npm Explorer';
@@ -11,10 +12,9 @@ describe('Npm Registry Web View Initial Page Tests', () => {
 
     before(async function(): Promise<void> {
         this.timeout(20000);
-        // Wait for VSCode to initialize, it may need to be tweaked locally
-        await new Promise(res => setTimeout(res, 2000));
+        await VSBrowser.instance.waitForWorkbench();
         await new Workbench().executeCommand('Open Npm Registry');
-        await new Promise(res => setTimeout(res, 500));
+        await waitForWebview();
         view = new WebView();
         await view.switchToFrame();
     });
@@ -52,14 +52,13 @@ describe('Npm Registry Web View Search Page Tests', () => {
 
     before(async function(): Promise<void> {
         this.timeout(20000);
-        // Wait for VSCode to initialize, it may need to be ticked locally
-        await new Promise(res => setTimeout(res, 2000));
+        await VSBrowser.instance.waitForWorkbench();
         const prompt: InputBox = await new Workbench().openCommandPrompt() as InputBox;
         await prompt.setText('>Search Npm Registry');
         await prompt.confirm();
         await prompt.setText('mocha');
         await prompt.confirm();
-        await new Promise(res => setTimeout(res, 2000));
+        await waitForWebview();
         view = new WebView();
         await view.switchToFrame();
     });
@@ -118,12 +117,12 @@ describe('Npm Registry Web View Search Page Tests', () => {
         for (const pagination of paginations) {
             const pageNumbers: WebElement[] = await pagination.findElements(By.className('page-link'));
             expect(parseInt(await pageNumbers[0].getText())).to.equal(1);
-            expect(await pageNumbers[0].getAttribute('class')).to.has.string('active');
+            expect(await pageNumbers[0].getAttribute('class')).to.have.string('active');
             expect(parseInt(await pageNumbers[pageNumbers.length - 1].getText())).to.equal(totalPages);
 
             // Only the first page (initially)  should be active
             for (const pageNumber of pageNumbers.slice(1)) {
-                expect(await pageNumber.getAttribute('class')).to.not.has.string('active');
+                expect(await pageNumber.getAttribute('class')).to.not.have.string('active');
             }
             expect((await pagination.findElements(By.className('disabled-link page-previous'))).length).to.equal(1);
             expect((await pagination.findElements(By.className('page-next'))).length).to.equal(1);
@@ -132,15 +131,15 @@ describe('Npm Registry Web View Search Page Tests', () => {
 
     it('Check the sorting loads as expected', async () => {
         const sortPackagesHeader: WebElement = await view.findWebElement(By.id('sort-packages-header'));
-        expect(await sortPackagesHeader.getText()).to.is.string('Sort Packages');
+        expect(await sortPackagesHeader.getText()).to.be.string('Sort Packages');
         
         const sortPackagesList: WebElement = await view.findWebElement(By.id('sort-packages-list'));
         const sortPackagesListElements: WebElement[] = await sortPackagesList.findElements(By.css('li'));
         expect(sortPackagesListElements.length).to.equal(4);
-        expect(await sortPackagesListElements[0].getText()).to.is.string('Optimal');
-        expect(await sortPackagesListElements[1].getText()).to.is.string('Popularity');
-        expect(await sortPackagesListElements[2].getText()).to.is.string('Quality');
-        expect(await sortPackagesListElements[3].getText()).to.is.string('Maintenance');
+        expect(await sortPackagesListElements[0].getText()).to.be.string('Optimal');
+        expect(await sortPackagesListElements[1].getText()).to.be.string('Popularity');
+        expect(await sortPackagesListElements[2].getText()).to.be.string('Quality');
+        expect(await sortPackagesListElements[3].getText()).to.be.string('Maintenance');
     });
 });
 
@@ -152,10 +151,8 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
 
     before(async function(): Promise<void> {
         this.timeout(30000);
-        // Wait for VSCode to initialize, it may need to be tweaked locally
-        await new Promise(res => setTimeout(res, 2000));
         await VSBrowser.instance.openResources(path.join('out', 'ui-test', 'resources'));
-        await new Promise(res => setTimeout(res, 1000));
+        await VSBrowser.instance.waitForWorkbench();
         const explorerView: SideBarView | undefined = await (await new ActivityBar().getViewControl('Explorer'))?.openView();
         if (!explorerView) {
             throw new Error('Npm Explorer View Not There!');
@@ -165,13 +162,13 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
         npmExplorerSection = await explorerView.getContent().getSection(npmExplorerTitle) as CustomTreeSection;
         await npmExplorerSection.expand();
         // Wait for content to load
-        await new Promise(res => setTimeout(res, 3000));
+        await waitForTreeProgress(npmExplorerSection);
 
         await npmExplorerSection.click();
         mochaDependency = await npmExplorerSection.findItem('mocha');
         await mochaDependency?.click();
         await mochaDependency?.findElement(By.css('[title="Open Npm Registry with Dependency"]'))?.click();
-        await new Promise(res => setTimeout(res, 3000));
+        await waitForWebview();
 
         view = new WebView();
     });
@@ -188,39 +185,39 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
 
     it('Check the dependency page loads as expected', async () => {
         await npmExplorerSection.click();
-        await new Promise(res => setTimeout(res, 500));
+        await waitForTreeProgress(npmExplorerSection, 500);
         let mochaVersion: WebElement | undefined = await mochaDependency?.findElement(By.className('label-description'));
-        expect(await mochaVersion?.getText()).to.is.string('Current version: ^9.2.0');
+        expect(await mochaVersion?.getText()).to.be.string('Current version: ^9.2.0');
 
         await view.switchToFrame();
         const contentInfoName: WebElement = await view.findWebElement(By.id('content-info-name'));
-        expect(await contentInfoName.getText()).to.is.string('mocha');
+        expect(await contentInfoName.getText()).to.be.string('mocha');
 
         const contentInfoInstalledVersion: WebElement = await view.findWebElement(By.id('content-info-installed-version'));
-        expect(await contentInfoInstalledVersion.getText()).to.is.string('Version (^9.2.0) installed as dev dependency');
+        expect(await contentInfoInstalledVersion.getText()).to.be.string('Version (^9.2.0) installed as dev dependency');
 
         const detailsSectionDescEls: WebElement[] = await view.findWebElements(By.className('details-section-desc'));
         for (const [index, value] of detailsSectionDescEls.entries()) {
             const header: WebElement = await value.findElement(By.css('h3'));
             if (index === 0) {
-                expect(await header.getText()).to.is.string('Npm Page');
+                expect(await header.getText()).to.be.string('Npm Page');
             }
             if (index === 1) {
-                expect(await header.getText()).to.is.string('Repository');
+                expect(await header.getText()).to.be.string('Repository');
             }
             if (index === 2) {
-                expect(await header.getText()).to.is.string('Homepage');
+                expect(await header.getText()).to.be.string('Homepage');
             }
         }
 
         const weeklyDownloadsHeader: WebElement = await view.findWebElement(By.id('weekly-downloads-header'));
-        expect(await weeklyDownloadsHeader.getText()).to.is.string('Downloads');
+        expect(await weeklyDownloadsHeader.getText()).to.be.string('Downloads');
 
         const keywordsHeader: WebElement = await view.findWebElement(By.id('keywords-header'));
-        expect(await keywordsHeader.getText()).to.is.string('Keywords');
+        expect(await keywordsHeader.getText()).to.be.string('Keywords');
 
         const keywords: WebElement[] = await view.findWebElements(By.className('keyword-link'));
-        expect(await keywords[0].getText()).to.is.string('mocha');
+        expect(await keywords[0].getText()).to.be.string('mocha');
 
         // Check readme is there but no content as it changes
         const readmeContent: WebElement = await view.findWebElement(By.id('content-md'));
@@ -234,12 +231,12 @@ describe('Npm Registry Web View Dependency Page Tests', () => {
         await view.switchBack();
 
         await npmExplorerSection.click();
-        await new Promise(res => setTimeout(res, 500));
+        await waitForTreeProgress(npmExplorerSection, 500);
         mochaDependency = await npmExplorerSection.findItem('mocha');
         await mochaDependency?.click();
-        await new Promise(res => setTimeout(res, 500));
+        await waitForTreeProgress(npmExplorerSection, 500);
         mochaVersion = await mochaDependency?.findElement(By.className('label-description'));
-        expect(await mochaVersion?.getText()).to.not.has.string('9.2.0');
-        expect(await mochaVersion?.getText()).to.has.string(versionToInstall);
+        expect(await mochaVersion?.getText()).to.not.have.string('9.2.0');
+        expect(await mochaVersion?.getText()).to.have.string(versionToInstall);
     });
 });

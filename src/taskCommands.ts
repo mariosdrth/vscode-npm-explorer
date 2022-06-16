@@ -39,7 +39,7 @@ export const npmInstall: (npmExplorerProvider: NpmExplorerProvider) => Promise<v
 };
 
 export const updateDependency: (dependency: Dependency, npmExplorerProvider: NpmExplorerProvider) => Promise<void> = async (dependency, npmExplorerProvider) => {
-    let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('updateDevCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('updateCommandArguments', '');
+    let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('updateDevDependencyCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('updateDependencyCommandArguments', '');
     if (extraArguments) {
         extraArguments = ` ${extraArguments}`;
     } else if (dependency.isDev) {
@@ -64,7 +64,7 @@ export const installDependency: (dependencyName: string, npmExplorerProvider: Np
 };
 
 export const uninstallDependency: (dependency: Dependency, npmExplorerProvider: NpmExplorerProvider) => Promise<void> = async (dependency, npmExplorerProvider) => {
-    let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('uninstallDevCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('uninstallCommandArguments', '');
+    let extraArguments: string = dependency.isDev ? workspace.getConfiguration('npmExplorer').get<string>('uninstallDevDependencyCommandArguments', '') : workspace.getConfiguration('npmExplorer').get<string>('uninstallDependencyCommandArguments', '');
     if (extraArguments) {
         extraArguments = ` ${extraArguments}`;
     } else if (dependency.isDev) {
