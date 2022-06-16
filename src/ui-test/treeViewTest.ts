@@ -208,6 +208,10 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
+        const text: string = await bottomBar.getText();
+        console.log('--------------------------------');
+        console.log('TERMINAL TEXT: ' + text);
+        console.log('--------------------------------');
         expect(await bottomBar.getText()).to.have.string('npm outdated - Task');
 
         await assertTerminalContent({
@@ -237,6 +241,10 @@ describe('Npm Explorer View Tests', () => {
         await waitForTerminalProgress(bottomBar);
 
         expect(await bottomBar.isDisplayed()).to.be.true;
+        const text: string = await bottomBar.getText();
+        console.log('--------------------------------');
+        console.log('TERMINAL TEXT: ' + text);
+        console.log('--------------------------------');
         expect(await bottomBar.getText()).to.have.string('npm update - Task');
 
         await assertTerminalContent({
@@ -282,6 +290,10 @@ describe('Npm Explorer View Tests', () => {
 
         expect(await bottomBar.isDisplayed()).to.be.true;
         expect(await bottomBar.getText()).to.have.string('print - Task');
+        const text: string = await bottomBar.getText();
+        console.log('--------------------------------');
+        console.log('TERMINAL TEXT: ' + text);
+        console.log('--------------------------------');
 
         await bottomBar.toggle(false);
         await waitForTreeProgress(npmExplorerSection);
