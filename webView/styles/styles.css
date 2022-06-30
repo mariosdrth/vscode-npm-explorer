@@ -31,6 +31,7 @@ a:hover {
     background-color: rgba(100, 100, 100, 0.3);
     border-bottom-left-radius: 5px;
     border-top-left-radius: 5px;
+    cursor: pointer;
 }
 
 .install-btn-no-hover {
@@ -130,6 +131,10 @@ a:hover {
 }
 
 #install-btn-dropdown:hover #install-btn-dropdown-content {
+    display: block;
+}
+
+#install-btn:hover + #install-btn-dropdown #install-btn-dropdown-content {
     display: block;
 }
 
@@ -352,13 +357,10 @@ a:hover {
     margin-right: 0.3rem;
 }
 
-#content-updated {
-    margin-left: 15rem;
-}
-
 #content-package-details {
     display: flex;
     margin-top: 2rem;
+    justify-content: space-between;
 }
 
 .content-info-version {

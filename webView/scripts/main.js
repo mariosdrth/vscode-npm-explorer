@@ -160,6 +160,7 @@ function loadGraph(xValues, yValues) {
                     borderWidth: 5,
                     borderColor: "#8956FF",
                     pointBackgroundColor: "#8956FF",
+                    pointHoverBackgroundColor: "#8956FF",
                     backgroundColor: "rgba(94, 26, 255, 0.1)",
                     data: yValues,
                     xValues: xValues,
